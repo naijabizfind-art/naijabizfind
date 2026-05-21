@@ -69,7 +69,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, '../naijabizfind/dist')));
 
 // EXPRESS V5 FIX: Using an explicit named wildcard parameter (/:splat*) instead of a raw '*'
-app.get('/:splat*', (req, res, next) => {
+app.get('*', (req, res, next) => {
   // If the path starts with /api, let it fall through to your actual API routers
   if (req.path.startsWith('/api')) {
     return next();
