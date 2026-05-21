@@ -1,0 +1,16 @@
+{
+  "name": "naijabizfind-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "naijabizfind",
+    "naijabizfind-backend"
+  ],
+  "scripts": {
+    "build-frontend": "npm run build --workspace=naijabizfind",
+    "build": "npm run build-frontend",
+    "start": "node naijabizfind-backend/server.js",
+    "dev-backend": "npm run dev --workspace=naijabizfind-backend",
+    "dev-frontend": "npm run dev --workspace=naijabizfind"
+  }
+}
