@@ -39,6 +39,31 @@ const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.image || '';
 const isFeatured = (biz) => biz?.plan === 'featured';
 const getHours = (biz) => biz?.workingHours ? `${biz.workingHours.open} - ${biz.workingHours.close}` : biz?.hours || '';
 
+// --- COMPONENT: Business Card Skeleton Loader ---
+const BusinessCardSkeleton = () => (
+  <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full animate-pulse">
+    {/* pulsing cover photo image container */}
+    <div className="bg-gray-200 h-40 sm:h-44 w-full" />
+    <div className="p-4 flex-1 flex flex-col space-y-3">
+      {/* pulsing business title */}
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      {/* pulsing location sub-text */}
+      <div className="flex items-center gap-1">
+        <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
+      </div>
+      {/* pulsing rating and category footer */}
+      <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
+        <div className="flex items-center gap-1 w-1/3">
+          <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
+        </div>
+        <div className="h-3 bg-gray-200 rounded w-1/4" />
+      </div>
+    </div>
+  </div>
+);
+
 // --- COMPONENT: Business Card ---
 const BusinessCard = ({ biz, onClick }) => (
   <div
@@ -164,7 +189,9 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           <button onClick={() => onNavigate('directory')} className="text-[#008751] text-xs md:text-sm font-bold">View All</button>
         </div>
         {loading ? (
-          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#008751]" /></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+            {[1, 2, 3, 4, 5].map(i => <BusinessCardSkeleton key={i} />)}
+          </div>
         ) : featured.length === 0 ? (
           <p className="text-sm text-gray-400 font-medium">No featured directory entries live yet.</p>
         ) : (
@@ -191,7 +218,9 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-20">
         <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">Popular Nearby</h2>
         {loading ? (
-          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#008751]" /></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => <BusinessCardSkeleton key={i} />)}
+          </div>
         ) : popular.length === 0 ? (
           <p className="text-sm text-gray-400 font-medium">No active business listings available near you.</p>
         ) : (
@@ -278,20 +307,16 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
         ))}
       </div>
 
-      {loading && (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 size={28} className="text-[#008751] animate-spin" />
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => <BusinessCardSkeleton key={i} />)}
         </div>
-      )}
-
-      {!loading && businesses.length === 0 && (
+      ) : businesses.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <p className="font-bold text-base">No businesses found for this filter.</p>
           <button onClick={() => { setActiveCategory(''); setSearchCity(''); }} className="mt-3 text-[#008751] text-sm font-bold">Clear filters</button>
         </div>
-      )}
-
-      {!loading && (
+      ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
           {businesses.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
         </div>
