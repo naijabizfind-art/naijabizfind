@@ -68,9 +68,9 @@ const __dirname = path.dirname(__filename);
 // Serve compiled static files from our React frontend workspace
 app.use(express.static(path.join(__dirname, '../naijabizfind/dist')));
 
-// For any non-API request, fallback to React's client-side routing
-app.get('(*)', (req, res, next) => {
-  // If the path starts with /api, let it fall through to error handling (don't serve index.html)
+// EXPRESS V5 FIX: Using an explicit named wildcard parameter (/:splat*) instead of a raw '*'
+app.get('/:splat*', (req, res, next) => {
+  // If the path starts with /api, let it fall through to your actual API routers
   if (req.path.startsWith('/api')) {
     return next();
   }
