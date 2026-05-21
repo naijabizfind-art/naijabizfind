@@ -69,7 +69,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, '../naijabizfind/dist')));
 
 // For any non-API request, fallback to React's client-side routing
-app.get('*', (req, res, next) => {
+app.get('(*)', (req, res, next) => {
   // If the path starts with /api, let it fall through to error handling (don't serve index.html)
   if (req.path.startsWith('/api')) {
     return next();
