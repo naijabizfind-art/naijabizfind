@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 // --- CONFIG ---
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 // Custom TikTok Icon
 const TikTokIcon = ({ size = 18 }) => (
@@ -25,36 +25,6 @@ const COLORS = {
   textMain: '#111827',
   textMuted: '#6B7280',
 };
-
-// --- MOCK DATA (fallback when API is unavailable) ---
-const generateBusinesses = (count, offset = 0) => {
-  const categories = ["fashion", "food", "services", "beauty", "auto"];
-  const cities = ["Lagos", "Abuja", "PH City", "Ibadan", "Kano"];
-  const images = [
-    "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=600",
-    "https://images.unsplash.com/photo-1486006396113-ad3397b31293?q=80&w=600",
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=600",
-    "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=600",
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=600"
-  ];
-  return Array.from({ length: count }, (_, i) => ({
-    _id: `mock-${offset + i}`,
-    name: ["Standard Shop", "Kola's Garage", "Elite Styles", "Mama's Pot", "Fix-It Hub"][i % 5] + ` #${offset + i}`,
-    category: categories[i % categories.length],
-    city: cities[i % cities.length],
-    plan: i < 5 && offset === 0 ? 'featured' : 'basic',
-    workingHours: { open: '9am', close: '6pm' },
-    images: { shopPhoto: images[i % images.length] },
-    description: "Providing high-quality local services to the community with years of experience and verified customer satisfaction.",
-    phone: "+234 800 000 0000",
-    whatsapp: "+234 800 000 0000",
-    address: `No. ${i + 1} Business Road, ${cities[i % cities.length]}`,
-    rating: (4.0 + Math.random()).toFixed(1),
-    reviews: Math.floor(Math.random() * 500) + 20,
-  }));
-};
-
-const MOCK_BUSINESSES = generateBusinesses(20, 0);
 
 const CATEGORIES = [
   { name: "Fashion", value: "fashion", icon: <ShoppingBag size={18} /> },
@@ -78,7 +48,7 @@ const BusinessCard = ({ biz, onClick }) => (
     <div className="relative h-40 sm:h-44 overflow-hidden">
       <img src={getShopPhoto(biz)} alt={biz.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
       {isFeatured(biz) && (
-        <div className="absolute top-3 left-3 bg-[#008751] text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-lg">
+        <div className="absolute top-3 left-3 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-lg">
           Featured
         </div>
       )}
@@ -91,7 +61,7 @@ const BusinessCard = ({ biz, onClick }) => (
       <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <Star size={14} fill={COLORS.accent} stroke={COLORS.accent} />
-          <span className="text-xs sm:text-sm font-bold text-gray-900">{biz.rating || '4.5'}</span>
+          <span className="text-xs sm:text-sm font-bold text-gray-900">{biz.rating || '5.0'}</span>
         </div>
         <span className="text-[#008751] font-bold text-[10px] sm:text-xs capitalize">{biz.category}</span>
       </div>
@@ -120,7 +90,7 @@ const Alert = ({ type, message }) => {
 
 // --- VIEW: HOMEPAGE ---
 const HomeView = ({ onNavigate, onSelectBusiness }) => {
-  const [businesses, setBusinesses] = useState(MOCK_BUSINESSES.slice(0, 10));
+  const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -129,10 +99,10 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         const res = await fetch(`${API_BASE}/businesses`);
         if (res.ok) {
           const data = await res.json();
-          if (data.length > 0) setBusinesses(data);
+          setBusinesses(data);
         }
-      } catch {
-        // Silently fall back to mock data
+      } catch (err) {
+        console.error('Failed fetching data streaming:', err);
       } finally {
         setLoading(false);
       }
@@ -142,8 +112,6 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
 
   const featured = businesses.filter(b => isFeatured(b)).slice(0, 5);
   const popular = businesses.filter(b => !isFeatured(b)).slice(0, 10);
-  const displayFeatured = featured.length > 0 ? featured : MOCK_BUSINESSES.slice(0, 5);
-  const displayPopular = popular.length > 0 ? popular : MOCK_BUSINESSES.slice(5, 15);
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -195,9 +163,15 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           <h2 className="text-lg font-bold text-gray-900">Featured Businesses</h2>
           <button onClick={() => onNavigate('directory')} className="text-[#008751] text-xs md:text-sm font-bold">View All</button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
-          {displayFeatured.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#008751]" /></div>
+        ) : featured.length === 0 ? (
+          <p className="text-sm text-gray-400 font-medium">No featured directory entries live yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+            {featured.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+          </div>
+        )}
       </section>
 
       {/* CTA BANNER */}
@@ -216,9 +190,15 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
       {/* POPULAR */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-20">
         <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6">Popular Nearby</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
-          {displayPopular.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#008751]" /></div>
+        ) : popular.length === 0 ? (
+          <p className="text-sm text-gray-400 font-medium">No active business listings available near you.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+            {popular.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -228,14 +208,11 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
 const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState(initialCategory || '');
   const [searchCity, setSearchCity] = useState('');
-  const [usingMock, setUsingMock] = useState(false);
 
   const fetchBusinesses = async () => {
     setLoading(true);
-    setError('');
     try {
       const params = new URLSearchParams();
       if (activeCategory) params.append('category', activeCategory);
@@ -244,18 +221,9 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
       const res = await fetch(`${API_BASE}/businesses?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
-
-      if (data.length === 0 && !activeCategory && !searchCity) {
-        // No live data yet — show mock for demo
-        setBusinesses(MOCK_BUSINESSES);
-        setUsingMock(true);
-      } else {
-        setBusinesses(data);
-        setUsingMock(false);
-      }
-    } catch {
-      setBusinesses(MOCK_BUSINESSES);
-      setUsingMock(true);
+      setBusinesses(data);
+    } catch (err) {
+      console.error('API integration stream halt:', err);
     } finally {
       setLoading(false);
     }
@@ -269,7 +237,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900">Explore Directory</h1>
           <p className="text-xs md:text-sm text-gray-400 font-medium">
-            {usingMock ? 'Showing demo listings — connect your backend to see live data' : `${businesses.length} verified businesses`}
+            {businesses.length} verified businesses listed online
           </p>
         </div>
         {/* City search */}
@@ -392,7 +360,7 @@ const DetailView = ({ business, onBack }) => (
   </div>
 );
 
-// --- VIEW: SUBMIT BUSINESS (fully wired) ---
+// --- VIEW: SUBMIT BUSINESS ---
 const SubmitView = () => {
   const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState('basic');
@@ -401,21 +369,16 @@ const SubmitView = () => {
   const shopPhotoInputRef = useRef(null);
   const certInputRef = useRef(null);
 
-  // Form state
   const [form, setForm] = useState({
     name: '', category: 'fashion', city: '', address: '',
     description: '', phone: '', whatsapp: '',
     openTime: '', closeTime: '',
   });
 
-  // Image state (stored as base64 preview + file object)
   const [shopPhoto, setShopPhoto] = useState(null);
   const [shopPhotoPreview, setShopPhotoPreview] = useState('');
   const [certificate, setCertificate] = useState(null);
   const [certificateName, setCertificateName] = useState('');
-
-  // Saved business ID after step 1 POST
-  const [businessId, setBusinessId] = useState(null);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -437,7 +400,6 @@ const SubmitView = () => {
     setCertificateName(file.name);
   };
 
-  // Step 1: Register business entry on backend
   const handleRegister = async () => {
     if (!form.name || !form.city || !form.address || !form.phone || !form.openTime || !form.closeTime || !form.description) {
       setAlert({ type: 'error', message: 'Please fill in all required fields.' });
@@ -447,9 +409,8 @@ const SubmitView = () => {
     setStep(2);
   };
 
-  // Step 2: Upload media (we move to step 3 — Cloudinary upload handled on submit)
   const handleMediaNext = () => {
-    if (!shopPhoto && !shopPhotoPreview) {
+    if (!shopPhoto) {
       setAlert({ type: 'error', message: 'Please upload a shop cover photo.' });
       return;
     }
@@ -457,25 +418,39 @@ const SubmitView = () => {
     setStep(3);
   };
 
-  // Step 3: Submit everything and pay
   const handleSubmitAndPay = async () => {
     setSubmitting(true);
     setAlert(null);
 
     try {
-      // For now, shopPhoto is submitted as a placeholder URL until Cloudinary is wired up.
-      // In production, upload to Cloudinary first and use the returned URL.
-      const shopPhotoUrl = shopPhotoPreview || 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=600';
+      // 1. Core upload flow handling multipart multi-destination assets
+      const uploadData = new FormData();
+      uploadData.append('shopPhoto', shopPhoto);
+      if (certificate) {
+        uploadData.append('certificate', certificate);
+      }
 
-      // 1. Register the business
+      const uploadRes = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      if (!uploadRes.ok) {
+        const uploadErr = await uploadRes.json();
+        throw new Error(uploadErr.message || 'Media file assets processing failed.');
+      }
+
+      const mediaUrls = await uploadRes.json();
+
+      // 2. Register the business with real cloud URLs
       const registerRes = await fetch(`${API_BASE}/businesses/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           plan: selectedPlan,
-          shopPhoto: shopPhotoUrl,
-          certificate: certificateName ? shopPhotoUrl : undefined, // placeholder
+          shopPhoto: mediaUrls.shopPhoto,
+          certificate: mediaUrls.certificate || null,
         }),
       });
 
@@ -485,10 +460,9 @@ const SubmitView = () => {
       }
 
       const savedBusinessId = registerData._id;
-      setBusinessId(savedBusinessId);
 
-      // 2. Initialize Paystack payment
-      const email = form.phone + '@naijabizfind.com'; // Placeholder email — add email field if needed
+      // 3. Initialize Paystack payment
+      const email = form.phone + '@naijabizfind.com';
       const payRes = await fetch(`${API_BASE}/payments/initialize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -500,7 +474,7 @@ const SubmitView = () => {
         throw new Error(payData.message || 'Payment initialization failed');
       }
 
-      // 3. Redirect to Paystack checkout page
+      // 4. Redirect to secure external checkouts
       window.location.href = payData.authorization_url;
 
     } catch (err) {
@@ -799,7 +773,6 @@ const PaymentSuccessView = ({ onNavigate }) => {
 // --- MAIN APP ---
 export default function App() {
   const [page, setPage] = useState(() => {
-    // Handle Paystack callback redirect on payment-success
     if (window.location.pathname === '/payment-success' ||
         window.location.search.includes('reference') ||
         window.location.search.includes('trxref')) {
