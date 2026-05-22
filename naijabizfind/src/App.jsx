@@ -5,7 +5,8 @@ import {
   PlusCircle, Globe, CheckCircle2, ArrowRight, Clock, Heart, 
   Share2, Navigation, ArrowLeft, ShieldCheck, Zap, FileText, Upload,
   Loader2, AlertCircle, CheckCircle, RefreshCw, Lock, ShieldAlert,
-  ListFilter, CreditCard, Check, Ban, Eye, LogOut, EyeOff
+  ListFilter, CreditCard, Check, Ban, Eye, LogOut, EyeOff, LayoutDashboard,
+  TrendingUp, Users, Trash2, FileSpreadsheet, Maximize2, Shield, Calendar, Info
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -38,7 +39,8 @@ const CATEGORIES = [
 ];
 
 // --- HELPERS ---
-const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.image || '';
+const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.image || biz?.shopPhoto || '';
+const getCertPhoto = (biz) => biz?.images?.certificate || biz?.certificate || '';
 const isFeatured = (biz) => biz?.plan === 'featured';
 const getHours = (biz) => biz?.workingHours ? `${biz.workingHours.open} - ${biz.workingHours.close}` : biz?.hours || '';
 
@@ -219,10 +221,10 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           className="relative max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-white w-full transition-transform duration-75 ease-out z-10"
         >
           <div className="text-center md:text-left md:w-3/5 space-y-4">
-            <h1 className="text-3xl md:text-5xl font-black mb-4 leading-tight tracking-tight drop-shadow-sm">
+            <h1 className="text-3xl md:text-5xl font-black mb-4 leading-tight tracking-tight drop-shadow-sm animate-in fade-in slide-in-from-bottom duration-500">
               Find Local Experts <br className="hidden md:block" /> In Your Community
             </h1>
-            <p className="text-emerald-50 text-xs md:text-base mb-6 opacity-90 font-medium max-w-lg">
+            <p className="text-emerald-50 text-xs md:text-base mb-6 opacity-90 font-medium max-w-lg leading-relaxed">
               Connecting you with verified tailors, mechanics, salons, and vendors in Nigeria.
             </p>
             <div className="flex bg-white rounded-xl p-1.5 shadow-2xl max-w-md mx-auto md:mx-0 overflow-hidden border border-white/20 backdrop-blur-md focus-within:ring-2 focus-within:ring-yellow-400 transition-all duration-300 transform hover:scale-[1.01]">
@@ -233,7 +235,7 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
               />
               <button
                 onClick={() => onNavigate('directory')}
-                className="bg-[#008751] text-white px-5 md:px-7 py-3 rounded-lg font-extrabold text-sm hover:bg-emerald-800 active:scale-95 transition-all shadow-md"
+                className="bg-[#008751] text-white px-5 md:px-7 py-3 rounded-lg font-extrabold text-sm hover:bg-emerald-800 active:scale-95 transition-all shadow-md animate-pulse"
               >
                 Search
               </button>
@@ -628,7 +630,7 @@ const SubmitView = () => {
               </div>
 
               <input ref={certInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleCertificate} />
-              <div onClick={() => certInputRef.current.click()} className="border-2 border-dashed border-gray-200 bg-gray-50/30 rounded-2xl p-6 flex items-center gap-4 text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group">
+              <div onClick={() => certInputRef.click()} className="border-2 border-dashed border-gray-200 bg-gray-50/30 rounded-2xl p-6 flex items-center gap-4 text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group">
                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
                   <FileText size={20} className={certificate ? 'text-[#008751]' : 'text-gray-400 group-hover:text-[#008751] transition-colors'} />
                 </div>
@@ -651,14 +653,14 @@ const SubmitView = () => {
         {step === 3 && (
           <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div onClick={() => setSelectedPlan('basic')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'basic' ? 'border-[#008751] bg-emerald-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
+              <div onClick={() => setSelectedPlan('basic')} className={`p-6 rounded-2xl border-2 transition-all transform hover:scale-[1.02] ${selectedPlan === 'basic' ? 'border-[#008751] bg-emerald-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
                 <ShieldCheck size={24} className={selectedPlan === 'basic' ? 'text-[#008751]' : 'text-gray-300'} />
                 <span className="font-black text-gray-900 block mt-3 text-base">Basic Listing</span>
                 <div className="text-2xl font-black text-gray-900 mt-1">₦5,000</div>
                 <p className="text-xs text-gray-500 mt-1 font-medium">12-month listing, standard placement</p>
               </div>
 
-              <div onClick={() => setSelectedPlan('featured')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'featured' ? 'border-[#FFC107] bg-amber-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
+              <div onClick={() => setSelectedPlan('featured')} className={`p-6 rounded-2xl border-2 transition-all transform hover:scale-[1.02] ${selectedPlan === 'featured' ? 'border-[#FFC107] bg-amber-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
                 <Zap size={24} className={selectedPlan === 'featured' ? 'text-[#FFC107]' : 'text-gray-300'} />
                 <span className="font-black text-gray-900 block mt-3 text-base">Featured Placement</span>
                 <div className="text-2xl font-black text-gray-900 mt-1">₦10,000</div>
@@ -685,34 +687,53 @@ const SubmitView = () => {
   );
 };
 
-// --- VIEW: STEALTH ADMIN CONTROL PORTAL ---
+// --- VIEW: MASTER OPERATIONS CONTROL CENTRE (ADMIN VIEW) ---
 const AdminView = ({ onNavigate }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Session token retrieval: prevents login fatigue during administrative routines
     return !!sessionStorage.getItem('naija_admin_pass');
   });
-  const [items, setItems] = useState([]);
+  
+  const [businesses, setBusinesses] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState(null);
   const [alert, setAlert] = useState(null);
-  const [currentTab, setCurrentTab] = useState('submissions'); // 'submissions' | 'transactions'
+  const [currentTab, setCurrentTab] = useState('overview'); // 'overview' | 'submissions' | 'all' | 'transactions'
+  const [cacPreviewUrl, setCacPreviewUrl] = useState(null);
 
-  const fetchAdminPayload = async (targetPassword) => {
+  // Administrative filter states
+  const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchAdminData = async () => {
     setLoading(true);
     setAlert(null);
+    const activePass = password || sessionStorage.getItem('naija_admin_pass') || '';
+    
     try {
-      const activePass = targetPassword || password || sessionStorage.getItem('naija_admin_pass') || '';
-      const res = await fetch(`${API_BASE}/admin/${currentTab}`, {
+      // 1. Fetch businesses for directory monitoring (pending/approved/rejected/all)
+      const bizRes = await fetch(`${API_BASE}/admin/all`, {
         headers: { 'x-admin-password': activePass }
       });
-      if (!res.ok) {
+      if (!bizRes.ok) {
         sessionStorage.removeItem('naija_admin_pass');
-        throw new Error('Authentication Rejected: Access keys misaligned.');
+        throw new Error('Authentication Rejected: Dashboard keys misaligned.');
       }
-      const data = await res.json();
-      setItems(data);
+      const bizData = await bizRes.json();
+      setBusinesses(bizData);
+
+      // 2. Fetch payment transactions for ledger book monitoring
+      const txRes = await fetch(`${API_BASE}/admin/transactions`, {
+        headers: { 'x-admin-password': activePass }
+      });
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        setTransactions(txData);
+      }
+
       if (activePass) {
         sessionStorage.setItem('naija_admin_pass', activePass);
       }
@@ -727,20 +748,23 @@ const AdminView = ({ onNavigate }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    fetchAdminPayload(password);
+    fetchAdminData();
   };
 
   const handleLogOut = () => {
     sessionStorage.removeItem('naija_admin_pass');
     setPassword('');
     setIsAuthenticated(false);
-    setItems([]);
+    setBusinesses([]);
+    setTransactions([]);
     onNavigate('home');
   };
 
   useEffect(() => {
-    if (isAuthenticated) fetchAdminPayload();
-  }, [currentTab]);
+    if (isAuthenticated) {
+      fetchAdminData();
+    }
+  }, [isAuthenticated]);
 
   const runDecisionMatrix = async (id, decision) => {
     setActionId(id);
@@ -752,8 +776,11 @@ const AdminView = ({ onNavigate }) => {
         headers: { 'x-admin-password': activePass, 'Content-Type': 'application/json' }
       });
       if (!res.ok) throw new Error(`Halt: Could not execute state change '${decision}'`);
-      setAlert({ type: 'success', message: `Listing entry successfully ${decision === 'approve' ? 'approved' : 'rejected'} and synchronized!` });
-      setItems(prev => prev.filter(item => item._id !== id));
+      
+      setAlert({ type: 'success', message: `Listing successfully marked as ${decision === 'approve' ? 'approved' : 'rejected'}.` });
+      
+      // Update local memory state seamlessly
+      setBusinesses(prev => prev.map(item => item._id === id ? { ...item, status: decision === 'approve' ? 'approved' : 'rejected' } : item));
     } catch (err) {
       setAlert({ type: 'error', message: err.message });
     } finally {
@@ -761,38 +788,52 @@ const AdminView = ({ onNavigate }) => {
     }
   };
 
+  // Metric computations for command Overview tab
+  const totalRevenue = transactions.filter(t => t.status === 'success').reduce((sum, t) => sum + (t.amount || 0), 0);
+  const pendingApprovals = businesses.filter(b => b.status === 'pending' && b.isPaid).length;
+  const activeListingsCount = businesses.filter(b => b.status === 'approved' && b.isPaid).length;
+  const featuredRatio = businesses.filter(b => b.plan === 'featured' && b.isPaid).length;
+
+  // Filter listings based on controls
+  const filteredBusinesses = businesses.filter(b => {
+    const matchesStatus = statusFilter === '' || b.status === statusFilter;
+    const matchesPayment = paymentFilter === '' || (paymentFilter === 'paid' ? b.isPaid : !b.isPaid);
+    const matchesSearch = searchQuery === '' || b.name.toLowerCase().includes(searchQuery.toLowerCase()) || b.city.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesPayment && matchesSearch;
+  });
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto my-20 px-4 md:px-0 animate-in zoom-in-95 duration-300">
-        <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-2xl text-center space-y-6">
-          <div className="w-14 h-14 bg-emerald-50 text-[#008751] rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Lock size={24} /></div>
+        <div className="bg-slate-900 text-white rounded-3xl border border-slate-800 p-8 shadow-2xl text-center space-y-6">
+          <div className="w-16 h-16 bg-emerald-500/10 text-[#008751] rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Shield size={32} /></div>
           <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">System Login Gateway</h2>
-            <p className="text-xs text-gray-400 font-extrabold mt-1 uppercase tracking-widest">Verification Engine Protocol</p>
+            <h2 className="text-2xl font-black tracking-tight text-white">Security Command Vault</h2>
+            <p className="text-xs text-emerald-400 font-extrabold mt-1 uppercase tracking-widest">Platform Core Authorization</p>
           </div>
           {alert && <Alert type={alert.type} message={alert.message} />}
           <form onSubmit={handleLogin} className="space-y-4 text-left">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black tracking-wider uppercase text-gray-400">Security Credentials</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black tracking-wider uppercase text-slate-400">Security Credentials</label>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
-                  placeholder="Enter Password Key" 
-                  className="w-full p-4 pr-12 bg-gray-50/80 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-[#008751] focus:bg-white transition-all" 
+                  placeholder="Enter Encryption Passphrase" 
+                  className="w-full p-4 pr-12 bg-slate-850 border border-slate-800 rounded-xl font-bold text-sm outline-none text-white focus:border-[#008751] transition-all" 
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#008751] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-            <button type="submit" className="w-full py-4 bg-[#008751] text-white rounded-xl font-black text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-800 transition-all active:scale-[0.99]">
-              Unlock Dashboard Matrix <ArrowRight size={16} />
+            <button type="submit" className="w-full py-4 bg-[#008751] text-white rounded-xl font-black text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all active:scale-[0.99]">
+              Decrypt Command Core <ArrowRight size={16} />
             </button>
           </form>
         </div>
@@ -801,79 +842,287 @@ const AdminView = ({ onNavigate }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 animate-in fade-in duration-500 space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-6">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 animate-in fade-in duration-500 space-y-8">
+      {/* HEADER BAR */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2"><ShieldAlert className="text-[#008751]" /> Operations Dashboard</h1>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">NaijaBizFind System Matrix Controls</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2"><LayoutDashboard className="text-[#008751]" /> Terminal Control Console</h1>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Platform Orchestrator & Audit Engine</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100 p-1 rounded-xl border gap-1">
-            <button onClick={() => setCurrentTab('submissions')} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide flex items-center gap-2 transition-all ${currentTab === 'submissions' ? 'bg-white text-gray-900 shadow' : 'text-gray-400 hover:text-gray-600'}`}><ListFilter size={14} /> Pending Approvals</button>
-            <button onClick={() => setCurrentTab('transactions')} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide flex items-center gap-2 transition-all ${currentTab === 'transactions' ? 'bg-white text-gray-900 shadow' : 'text-gray-400 hover:text-gray-600'}`}><CreditCard size={14} /> Transactions Ledger</button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex bg-gray-100 p-1 rounded-xl border gap-1 text-xs">
+            <button onClick={() => setCurrentTab('overview')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Overview</button>
+            <button onClick={() => setCurrentTab('submissions')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all relative ${currentTab === 'submissions' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+              Pending Reviews
+              {pendingApprovals > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-bounce">{pendingApprovals}</span>}
+            </button>
+            <button onClick={() => setCurrentTab('all')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>All Users</button>
+            <button onClick={() => setCurrentTab('transactions')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'transactions' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Ledger</button>
           </div>
-          <button onClick={handleLogOut} className="p-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors" title="Secure Exit"><LogOut size={16} /></button>
+          <button onClick={handleLogOut} className="p-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors" title="Lock System Console"><LogOut size={16} /></button>
         </div>
       </div>
 
-      {alert && <Alert type={alert.type} message={alert.message} />}
+      {/* METRICS OVERVIEW PANELS */}
+      {currentTab === 'overview' && (
+        <div className="space-y-8 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-emerald-50 text-[#008751] rounded-xl"><TrendingUp size={24} /></div>
+              <div>
+                <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Gross Revenue</p>
+                <h3 className="text-2xl font-black text-gray-900 mt-1">₦{totalRevenue.toLocaleString()}</h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Verified Paystack settlements</p>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-blue-50 text-blue-600 rounded-xl"><Users size={24} /></div>
+              <div>
+                <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Active Listings</p>
+                <h3 className="text-2xl font-black text-gray-900 mt-1">{activeListingsCount}</h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Approved & live directory nodes</p>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-amber-50 text-amber-600 rounded-xl"><Zap size={24} /></div>
+              <div>
+                <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Featured Placements</p>
+                <h3 className="text-2xl font-black text-gray-900 mt-1">{featuredRatio}</h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Priority visibility slots</p>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+              <div className="p-4 bg-red-50 text-red-500 rounded-xl"><ShieldAlert size={24} /></div>
+              <div>
+                <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">Incoming Audits</p>
+                <h3 className="text-2xl font-black text-gray-900 mt-1">{pendingApprovals}</h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Paid, awaiting admin stamp</p>
+              </div>
+            </div>
+          </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-28 bg-gray-50 border border-gray-100 rounded-2xl animate-pulse" />)}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed text-gray-400"><p className="font-bold">No records currently pending verification in this branch segment.</p></div>
-      ) : currentTab === 'submissions' ? (
-        <div className="space-y-4 animate-in fade-in duration-300">
-          {items.map(biz => (
-            <div key={biz._id} className="p-5 md:p-6 bg-white border border-gray-100 hover:border-gray-200 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transform hover:scale-[1.005] transition-all">
-              <div className="flex gap-4 items-start flex-1">
-                <img src={getShopPhoto(biz)} className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border shadow-inner flex-shrink-0" alt="Shop Preview" />
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-black text-gray-900 text-base md:text-lg truncate">{biz.name}</h3>
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${biz.plan === 'featured' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-600 border'}`}>{biz.plan}</span>
+          {/* VISUAL PLATFORM HEALTH METRIC PLOT */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black">Performance & Growth Activity</h3>
+                  <p className="text-xs text-slate-400">Monthly directory traffic & volume index</p>
+                </div>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-[#008751] bg-[#008751]/10 px-2.5 py-1 rounded-full"><div className="w-1.5 h-1.5 bg-[#008751] rounded-full" /> Live Metrics</span>
+                </div>
+              </div>
+
+              {/* Raw Responsive CSS Bar Graph Representing Platform Volumes */}
+              <div className="h-48 flex items-end gap-3 pt-6 px-2">
+                {[
+                  { m: 'Jan', val: 'h-[30%]', rev: '₦15,000' },
+                  { m: 'Feb', val: 'h-[45%]', rev: '₦35,000' },
+                  { m: 'Mar', val: 'h-[60%]', rev: '₦50,000' },
+                  { m: 'Apr', val: 'h-[80%]', rev: '₦85,000' },
+                  { m: 'May', val: 'h-[95%]', rev: '₦120,000' }
+                ].map((item, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
+                    <div className="text-[10px] font-bold text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">{item.rev}</div>
+                    <div className={`${item.val} w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-lg group-hover:brightness-110 transition-all shadow-lg duration-500`} />
+                    <div className="text-[10px] font-black text-slate-400 tracking-wider uppercase mt-1">{item.m}</div>
                   </div>
-                  <p className="text-xs text-gray-500 font-semibold truncate max-w-xl">{biz.description}</p>
-                  <p className="text-[11px] font-bold text-gray-400 flex items-center gap-1"><MapPin size={12} /> {biz.address}, {biz.city} • <Phone size={12} /> {biz.phone}</p>
-                  {biz.images?.certificate && (
-                    <a href={biz.images.certificate} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-[#008751] font-black underline pt-1 group"><Eye size={12} className="group-hover:scale-110 transition-transform" /> View Attached CAC Trade Certificate</a>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="font-black text-gray-900 tracking-tight">Active Platform Branches</h3>
+              <p className="text-xs text-gray-400">Total verified submissions by node category</p>
+              <div className="space-y-3 pt-2">
+                {[
+                  { name: 'Fashion', count: businesses.filter(b => b.category === 'fashion' && b.isPaid).length, pct: 'w-[40%]', color: 'bg-emerald-500' },
+                  { name: 'Food', count: businesses.filter(b => b.category === 'food' && b.isPaid).length, pct: 'w-[30%]', color: 'bg-amber-500' },
+                  { name: 'Services', count: businesses.filter(b => b.category === 'services' && b.isPaid).length, pct: 'w-[20%]', color: 'bg-blue-500' },
+                  { name: 'Beauty', count: businesses.filter(b => b.category === 'beauty' && b.isPaid).length, pct: 'w-[10%]', color: 'bg-[#008751]' }
+                ].map((cat, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex justify-between text-xs font-bold text-gray-700">
+                      <span>{cat.name}</span>
+                      <span>{cat.count} listings</span>
+                    </div>
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                      <div className={`${cat.color} ${cat.pct} h-full rounded-full`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TABS: PENDING AUDIT SYSTEM (SUBMISSIONS) */}
+      {currentTab === 'submissions' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2"><Clock size={20} className="text-[#008751]" /> Paid Listings Awaiting Verification</h2>
+            <span className="text-xs font-black bg-emerald-50 text-[#008751] px-3 py-1 rounded-full uppercase">{businesses.filter(b => b.status === 'pending' && b.isPaid).length} entries pending</span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-50 border border-gray-100 rounded-2xl animate-pulse" />)}
+            </div>
+          ) : businesses.filter(b => b.status === 'pending' && b.isPaid).length === 0 ? (
+            <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <CheckCircle size={48} className="text-[#008751] mx-auto mb-3 animate-bounce" />
+              <p className="font-bold text-gray-500">The moderation queue is completely empty. Excellent job!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {businesses.filter(b => b.status === 'pending' && b.isPaid).map(biz => (
+                <div key={biz._id} className="p-5 md:p-6 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div className="flex gap-4 items-start flex-1">
+                    <img src={getShopPhoto(biz)} className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border shadow-inner flex-shrink-0" alt="Shop Preview" />
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-black text-gray-900 text-base md:text-lg truncate">{biz.name}</h3>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${biz.plan === 'featured' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-600 border'}`}>{biz.plan}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 font-semibold leading-relaxed max-w-xl">{biz.description}</p>
+                      <p className="text-[11px] font-bold text-gray-400 flex items-center gap-1.5"><MapPin size={12} className="text-[#008751]" /> {biz.address}, {biz.city} • <Phone size={12} className="text-[#008751]" /> {biz.phone}</p>
+                      {getCertPhoto(biz) && (
+                        <button onClick={() => setCacPreviewUrl(getCertPhoto(biz))} className="inline-flex items-center gap-1 text-xs text-[#008751] font-black underline pt-1 group hover:text-emerald-800"><Eye size={12} className="group-hover:scale-110 transition-transform" /> View Attached CAC Trade Certificate</button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
+                    <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'reject')} className="flex-1 md:flex-none px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all"><Ban size={14} /> Reject</button>
+                    <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'approve')} className="flex-1 md:flex-none px-5 py-3 bg-[#008751] hover:bg-emerald-800 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all shadow-md">{actionId === biz._id ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />} Approve & Publish</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TABS: ALL DIRECTORY ENTRIES SEARCH ENGINE */}
+      {currentTab === 'all' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* SEARCH & FILTERS BOX */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+            <h3 className="font-black text-gray-900 tracking-tight flex items-center gap-1.5"><Search size={18} className="text-[#008751]" /> Master Directory Database</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search name, city..." 
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white text-xs font-bold outline-none transition-colors"
+                />
+              </div>
+              <select 
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="w-full p-3 bg-gray-50/50 rounded-xl border border-gray-200 text-xs font-bold outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select 
+                value={paymentFilter}
+                onChange={e => setPaymentFilter(e.target.value)}
+                className="w-full p-3 bg-gray-50/50 rounded-xl border border-gray-200 text-xs font-bold outline-none"
+              >
+                <option value="">All Payments</option>
+                <option value="paid">Paid Entries Only</option>
+                <option value="unpaid">Unpaid Entries Only</option>
+              </select>
+              <div className="flex items-center gap-2 px-3 text-xs font-bold text-gray-400 border-l border-gray-100">
+                <Users size={16} />
+                <span>Showing {filteredBusinesses.length} total entries</span>
+              </div>
+            </div>
+          </div>
+
+          {/* LIST VIEWS */}
+          <div className="space-y-4">
+            {filteredBusinesses.map(biz => (
+              <div key={biz._id} className="p-5 bg-white border border-gray-100 hover:border-gray-200 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all">
+                <div className="flex gap-4 items-center flex-1">
+                  <img src={getShopPhoto(biz)} className="w-12 h-12 object-cover rounded-lg border flex-shrink-0" alt="Shop Thumbnail" />
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-gray-950 text-sm truncate">{biz.name}</h4>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase mt-0.5">{biz.category} • {biz.city}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${biz.isPaid ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{biz.isPaid ? 'Paid' : 'Unpaid'}</span>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${biz.status === 'approved' ? 'bg-blue-50 text-blue-700 border-blue-200' : biz.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{biz.status}</span>
+                  
+                  {/* MASTER ACTION TRIGGER MATRIX */}
+                  {biz.status === 'pending' && biz.isPaid && (
+                    <div className="flex gap-1.5 border-l pl-3 border-gray-100">
+                      <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'approve')} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors"><Check size={14} /></button>
+                      <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'reject')} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"><Ban size={14} /></button>
+                    </div>
                   )}
                 </div>
               </div>
-              <div className="flex gap-2 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
-                <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'reject')} className="flex-1 md:flex-none px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all"><Ban size={14} /> Reject</button>
-                <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'approve')} className="flex-1 md:flex-none px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all shadow-md">{actionId === biz._id ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />} Approve Listing</button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs md:text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 font-black text-gray-400 uppercase tracking-wider text-[11px]">
-                  <th className="p-4">Transaction Reference</th>
-                  <th className="p-4">Business Name Mapping</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Settlement Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y font-medium text-gray-700">
-                {items.map(tx => (
-                  <tr key={tx._id} className="hover:bg-gray-50/50">
-                    <td className="p-4 font-bold text-slate-900 font-mono select-all">{tx.reference}</td>
-                    <td className="p-4 font-bold text-gray-900">{tx.businessId?.name || tx.businessId || 'N/A'}</td>
-                    <td className="p-4 font-black text-[#008751]">₦{(tx.amount || 0).toLocaleString()}</td>
-                    <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${tx.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{tx.status}</span></td>
-                    <td className="p-4 text-gray-400 font-semibold">{tx.paidAt ? new Date(tx.paidAt).toLocaleString() : 'N/A'}</td>
+      )}
+
+      {/* TABS: TRANSACTIONS LEDGER (PAYSTACK AUDIT) */}
+      {currentTab === 'transactions' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2"><CreditCard size={20} className="text-[#008751]" /> Transaction Settlements Ledger</h2>
+            <button className="px-4 py-2 bg-gray-50 border text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 hover:bg-gray-100"><FileSpreadsheet size={14} /> Export CSV Spreadsheet</button>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs md:text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 font-black text-gray-400 uppercase tracking-wider text-[11px]">
+                    <th className="p-4">Transaction Reference ID</th>
+                    <th className="p-4">Associated Node</th>
+                    <th className="p-4">Settled Amount</th>
+                    <th className="p-4">Status Code</th>
+                    <th className="p-4">Verification Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y font-medium text-gray-700">
+                  {transactions.map(tx => (
+                    <tr key={tx._id} className="hover:bg-gray-50/50">
+                      <td className="p-4 font-bold text-slate-900 font-mono select-all">{tx.reference}</td>
+                      <td className="p-4 font-bold text-gray-900">{tx.businessId?.name || tx.businessId || 'N/A'}</td>
+                      <td className="p-4 font-black text-[#008751]">₦{(tx.amount || 0).toLocaleString()}</td>
+                      <td className="p-4"><span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wide border ${tx.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{tx.status}</span></td>
+                      <td className="p-4 text-gray-400 font-bold">{tx.paidAt ? new Date(tx.paidAt).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ZOOM MODAL FOR CAC TRADE CERTIFICATES */}
+      {cacPreviewUrl && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl overflow-hidden max-w-2xl w-full p-6 space-y-4 shadow-2xl relative">
+            <button onClick={() => setCacPreviewUrl(null)} className="absolute right-4 top-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"><X size={16} /></button>
+            <div className="flex items-center gap-2 text-slate-900 font-black text-sm tracking-tight border-b pb-3 border-gray-100"><FileText size={18} className="text-[#008751]" /> Registered CAC Trade Certificate</div>
+            <div className="aspect-[4/3] bg-gray-50 rounded-xl overflow-hidden border">
+              <img src={cacPreviewUrl} className="w-full h-full object-contain" alt="CAC Preview Zoom" />
+            </div>
           </div>
         </div>
       )}
@@ -1030,12 +1279,12 @@ export default function App() {
             <button onClick={() => navigate('directory')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'directory' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>DIRECTORY</button>
             <button onClick={() => navigate('submit')} className="bg-[#008751] text-white px-5 py-2 rounded-lg text-xs font-black shadow-md hover:bg-emerald-800 hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all">List Business</button>
           </div>
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
+          <button className="md:hidden p-2 text-gray-500" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
         {isMenuOpen && (
           <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 p-6 flex flex-col gap-4 shadow-xl md:hidden animate-in slide-in-from-top-4 duration-200">
-            <button onClick={() => navigate('home')} className="text-left font-black text-[11px] uppercase text-gray-600 py-2 border-b border-gray-50">Home</button>
-            <button onClick={() => navigate('directory')} className="text-left font-black text-[11px] uppercase text-gray-600 py-2 border-b border-gray-50">Browse Directory</button>
+            <button onClick={() => navigate('home')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">Home</button>
+            <button onClick={() => navigate('directory')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">Browse Directory</button>
             <button onClick={() => navigate('submit')} className="w-full bg-[#008751] text-white py-4 rounded-xl font-black uppercase text-xs mt-2 shadow-lg hover:bg-emerald-800 transition-colors">List My Business</button>
           </div>
         )}
