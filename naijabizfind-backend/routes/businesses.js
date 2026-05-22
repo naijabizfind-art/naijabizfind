@@ -10,6 +10,8 @@ router.post('/register', async (req, res) => {
   try {
     const {
       name, category, city, address, description,
+      // ✅ FIX: email now extracted and saved — required by Paystack and email notifications
+      email,
       phone, whatsapp, openTime, closeTime, plan,
       shopPhoto, certificate
     } = req.body;
@@ -19,25 +21,31 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Please fill in all required fields' });
     }
 
+    // ✅ FIX: validate email
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ message: 'A valid email address is required' });
+    }
+
     if (!shopPhoto) {
       return res.status(400).json({ message: 'Shop photo is required. Please upload an image first.' });
     }
 
     const newBusiness = new Business({
       name,
-      category: category.toLowerCase(),
+      category: category.toLowerCase().trim(),
       city,
       address,
       description,
+      email: email.toLowerCase().trim(),
       phone,
-      whatsapp: whatsapp || phone, // Default WhatsApp to phone if not provided
+      whatsapp: whatsapp || phone,
       workingHours: {
         open: openTime,
         close: closeTime
       },
       images: {
         shopPhoto,
-        certificate: certificate || null
+        certificate: certificate || undefined
       },
       plan: plan || 'basic',
       isPaid: false,
@@ -52,6 +60,37 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// @route   POST /api/businesses/owner-login
+// @desc    Business owner login by phone — searches ALL statuses so pending owners can log in
+// @access  Public
+// ✅ FIX: The public GET /api/businesses only returns approved+paid listings.
+//         A new owner who just registered (status: pending) would never be found there.
+//         This dedicated endpoint searches all records by phone number.
+router.post('/owner-login', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+
+    const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
+    if (!cleanPhone) return res.status(400).json({ message: 'Invalid phone number' });
+
+    // Search all businesses (any status) for this phone number
+    const businesses = await Business.find({});
+    const match = businesses.find(b =>
+      b.phone.replace(/[^0-9]/g, '') === cleanPhone
+    );
+
+    if (!match) {
+      return res.status(404).json({ message: 'No business found with this phone number. Please register first.' });
+    }
+
+    res.json(match);
+  } catch (error) {
+    console.error('Owner login error:', error);
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
 // @route   GET /api/businesses
 // @desc    Get all approved & paid businesses. Supports ?category= and ?city= filters
 // @access  Public
@@ -59,13 +98,15 @@ router.get('/', async (req, res) => {
   try {
     const { category, city } = req.query;
 
-    // Base filter: only show approved & paid listings
     const filter = { isPaid: true, status: 'approved' };
 
     if (category) filter.category = category.toLowerCase();
-    if (city) filter.city = new RegExp(city, 'i'); // Case-insensitive city match
+    if (city) filter.city = new RegExp(city, 'i');
 
-    const businesses = await Business.find(filter).sort({ createdAt: -1 });
+    const businesses = await Business.find(filter)
+      .select('-__v')
+      .sort({ plan: -1, createdAt: -1 }); // featured first, then newest
+
     res.json(businesses);
   } catch (error) {
     console.error('Get businesses error:', error);
@@ -74,19 +115,16 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/businesses/:id
-// @desc    Get a single business by ID (must be approved & paid)
+// @desc    Get a single approved + paid business by ID
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const business = await Business.findById(req.params.id);
+    const business = await Business.findById(req.params.id).select('-__v');
 
-    if (!business) {
-      return res.status(404).json({ message: 'Business not found' });
-    }
+    if (!business) return res.status(404).json({ message: 'Business not found' });
 
-    // Only expose approved & paid listings to the public
     if (!business.isPaid || business.status !== 'approved') {
-      return res.status(403).json({ message: 'This listing is not yet publicly visible' });
+      return res.status(403).json({ message: 'This listing is not publicly visible yet' });
     }
 
     res.json(business);
