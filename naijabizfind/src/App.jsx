@@ -4,11 +4,14 @@ import {
   Phone, MessageCircle, Scissors, Coffee, ShoppingBag, Settings, 
   PlusCircle, Globe, CheckCircle2, ArrowRight, Clock, Heart, 
   Share2, Navigation, ArrowLeft, ShieldCheck, Zap, FileText, Upload,
-  Loader2, AlertCircle, CheckCircle, RefreshCw
+  Loader2, AlertCircle, CheckCircle, RefreshCw, Lock, ShieldAlert,
+  ListFilter, CreditCard, Check, Ban, Eye, LogOut, EyeOff
 } from 'lucide-react';
 
 // --- CONFIG ---
 const API_BASE = 'https://naijabizfind.onrender.com/api';
+// THE ADMIN ROUTE: Type /admin in your browser to land directly on the secure auth page
+const STEALTH_ADMIN_PATH = '/admin';
 
 // Custom TikTok Icon
 const TikTokIcon = ({ size = 18 }) => (
@@ -68,17 +71,13 @@ const useScrollReveal = () => {
 // --- COMPONENT: Business Card Skeleton Loader (Premium Shimmer) ---
 const BusinessCardSkeleton = () => (
   <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full animate-pulse shadow-sm">
-    {/* pulsing cover photo container */}
     <div className="bg-gradient-to-r from-gray-100 to-gray-200 h-40 sm:h-44 w-full" />
     <div className="p-4 flex-1 flex flex-col space-y-3">
-      {/* pulsing business title */}
       <div className="h-4 bg-gray-200 rounded w-3/4" />
-      {/* pulsing location sub-text */}
       <div className="flex items-center gap-1.5">
         <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
         <div className="h-3 bg-gray-200 rounded w-1/2" />
       </div>
-      {/* pulsing rating & category footer */}
       <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-1.5 w-1/3">
           <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
@@ -100,11 +99,8 @@ const BusinessCard = ({ biz, onClick }) => {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
-    // Calculate tilt angles (-12deg to 12deg)
     const rotateX = ((y / rect.height) - 0.5) * -24;
     const rotateY = ((x / rect.width) - 0.5) * 24;
-
     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
   };
 
@@ -124,11 +120,7 @@ const BusinessCard = ({ biz, onClick }) => {
       className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-emerald-200 hover:shadow-2xl cursor-pointer flex flex-col h-full will-change-transform"
     >
       <div className="relative h-40 sm:h-44 overflow-hidden">
-        <img 
-          src={getShopPhoto(biz)} 
-          alt={biz.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
-        />
+        <img src={getShopPhoto(biz)} alt={biz.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
         {isFeatured(biz) && (
           <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-lg z-10">
             Featured
@@ -178,7 +170,6 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
 
-  // Scroll tracking for Parallax implementation
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -205,7 +196,6 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
   const featured = businesses.filter(b => isFeatured(b)).slice(0, 5);
   const popular = businesses.filter(b => !isFeatured(b)).slice(0, 10);
 
-  // Initialize Scroll Reveal Elements
   const catRef = useScrollReveal();
   const featRef = useScrollReveal();
   const ctaRef = useScrollReveal();
@@ -215,7 +205,6 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
     <div className="overflow-hidden">
       {/* HERO (With Fine-tuned Parallax & Kinetic Visual Depth) */}
       <div className="relative bg-[#008751] py-16 md:py-24 px-4 md:px-6 overflow-hidden min-h-[340px] md:min-h-[420px] flex items-center">
-        {/* Parallax Background Graphics Layer */}
         <div 
           style={{ transform: `translateY(${scrollY * 0.4}px)`, opacity: Math.max(0.2, 1 - scrollY / 400) }}
           className="absolute inset-0 pointer-events-none transition-transform duration-75 ease-out"
@@ -225,7 +214,6 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           <div className="absolute top-1/3 left-1/2 w-48 h-48 bg-yellow-300/10 rounded-full blur-xl" />
         </div>
 
-        {/* Content Container */}
         <div 
           style={{ transform: `translateY(${scrollY * 0.15}px)` }}
           className="relative max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-white w-full transition-transform duration-75 ease-out z-10"
@@ -254,11 +242,8 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         </div>
       </div>
 
-      {/* CATEGORIES (Reveal-on-Scroll Layout) */}
-      <section 
-        ref={catRef}
-        className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 transform opacity-0 translate-y-12 transition-all duration-700 ease-out"
-      >
+      {/* CATEGORIES */}
+      <section ref={catRef} className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
         <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-700">
           {CATEGORIES.map((cat, i) => (
             <button
@@ -272,11 +257,8 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         </div>
       </section>
 
-      {/* FEATURED (Reveal-on-Scroll Layout) */}
-      <section 
-        ref={featRef}
-        className="max-w-7xl mx-auto px-4 md:px-6 py-6 transform opacity-0 translate-y-12 transition-all duration-700 ease-out"
-      >
+      {/* FEATURED */}
+      <section ref={featRef} className="max-w-7xl mx-auto px-4 md:px-6 py-6 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-black text-gray-900 tracking-tight">Featured Businesses</h2>
           <button onClick={() => onNavigate('directory')} className="text-[#008751] text-xs md:text-sm font-extrabold flex items-center gap-0.5 group">
@@ -296,11 +278,8 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         )}
       </section>
 
-      {/* CTA BANNER (Reveal-on-Scroll Layout) */}
-      <section 
-        ref={ctaRef}
-        className="max-w-7xl mx-auto px-4 md:px-6 py-10 transform opacity-0 translate-y-12 transition-all duration-700 ease-out"
-      >
+      {/* CTA BANNER */}
+      <section ref={ctaRef} className="max-w-7xl mx-auto px-4 md:px-6 py-10 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left shadow-md relative overflow-hidden group">
           <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-emerald-200/30 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
           <div className="relative z-10 space-y-1">
@@ -313,11 +292,8 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         </div>
       </section>
 
-      {/* POPULAR (Reveal-on-Scroll Layout) */}
-      <section 
-        ref={popRef}
-        className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 transform opacity-0 translate-y-12 transition-all duration-700 ease-out"
-      >
+      {/* POPULAR */}
+      <section ref={popRef} className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
         <h2 className="text-xl font-black text-gray-900 mb-6 tracking-tight">Popular Nearby</h2>
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
@@ -371,7 +347,6 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
             {businesses.length} verified businesses listed online
           </p>
         </div>
-        {/* City search */}
         <div className="flex gap-2 w-full md:w-auto">
           <input
             type="text"
@@ -381,16 +356,12 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
             placeholder="Filter by city..."
             className="flex-1 md:w-48 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 focus:outline-none focus:border-[#008751] transition-colors"
           />
-          <button
-            onClick={fetchBusinesses}
-            className="px-4 py-2.5 bg-[#008751] text-white rounded-lg text-xs font-black hover:bg-emerald-800 active:scale-95 transition-all shadow-md"
-          >
+          <button onClick={fetchBusinesses} className="px-4 py-2.5 bg-[#008751] text-white rounded-lg text-xs font-black hover:bg-emerald-800 active:scale-95 transition-all shadow-md">
             <Search size={14} />
           </button>
         </div>
       </div>
 
-      {/* Category filter pills */}
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
         <button
           onClick={() => setActiveCategory('')}
@@ -467,18 +438,10 @@ const DetailView = ({ business, onBack }) => (
       <div className="lg:col-span-5">
         <div className="sticky top-24 bg-white p-6 md:p-8 border border-gray-100 rounded-2xl md:rounded-3xl shadow-2xl space-y-4 transform hover:scale-[1.01] transition-transform duration-300">
           <h3 className="font-black text-gray-900 text-base md:text-lg tracking-tight">Contact Professional</h3>
-          <a
-            href={`tel:${business.phone}`}
-            className="w-full py-4 bg-[#008751] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.98] transition-all text-sm shadow-lg shadow-emerald-700/10"
-          >
+          <a href={`tel:${business.phone}`} className="w-full py-4 bg-[#008751] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.98] transition-all text-sm shadow-lg shadow-emerald-700/10">
             <Phone size={18} /> Call {business.phone}
           </a>
-          <a
-            href={`https://wa.me/${(business.whatsapp || business.phone || '').replace(/[^0-9]/g, '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-4 bg-[#25D366] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.98] transition-all text-sm shadow-lg shadow-green-600/10"
-          >
+          <a href={`https://wa.me/${(business.whatsapp || business.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-[#25D366] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.98] transition-all text-sm shadow-lg shadow-green-600/10">
             <MessageCircle size={18} /> Chat on WhatsApp
           </a>
         </div>
@@ -550,7 +513,6 @@ const SubmitView = () => {
     setAlert(null);
 
     try {
-      // 1. Core upload flow handling multipart multi-destination assets
       const uploadData = new FormData();
       uploadData.append('shopPhoto', shopPhoto);
       if (certificate) {
@@ -569,7 +531,6 @@ const SubmitView = () => {
 
       const mediaUrls = await uploadRes.json();
 
-      // 2. Register the business with real cloud URLs
       const registerRes = await fetch(`${API_BASE}/businesses/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -588,7 +549,6 @@ const SubmitView = () => {
 
       const savedBusinessId = registerData._id;
 
-      // 3. Initialize Paystack payment
       const email = form.phone + '@naijabizfind.com';
       const payRes = await fetch(`${API_BASE}/payments/initialize`, {
         method: 'POST',
@@ -601,7 +561,6 @@ const SubmitView = () => {
         throw new Error(payData.message || 'Payment initialization failed');
       }
 
-      // 4. Redirect to secure external checkouts
       window.location.href = payData.authorization_url;
 
     } catch (err) {
@@ -613,7 +572,6 @@ const SubmitView = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-10 animate-in zoom-in-95 duration-500">
       <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-12 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Register Your Business</h2>
@@ -631,60 +589,22 @@ const SubmitView = () => {
         {/* STEP 1: Business Info */}
         {step === 1 && (
           <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-            <input
-              name="name" value={form.name} onChange={handleChange}
-              type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white focus:ring-0 font-bold text-sm outline-none transition-colors"
-              placeholder="Business Name *"
-            />
+            <input name="name" value={form.name} onChange={handleChange} type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white focus:ring-0 font-bold text-sm outline-none transition-colors" placeholder="Business Name *" />
             <div className="grid grid-cols-2 gap-4">
-              <select
-                name="category" value={form.category} onChange={handleChange}
-                className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:bg-white font-bold text-sm outline-none transition-colors"
-              >
+              <select name="category" value={form.category} onChange={handleChange} className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:bg-white font-bold text-sm outline-none transition-colors">
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.name}</option>)}
               </select>
-              <input
-                name="city" value={form.city} onChange={handleChange}
-                type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-                placeholder="City *"
-              />
+              <input name="city" value={form.city} onChange={handleChange} type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="City *" />
             </div>
-            <input
-              name="address" value={form.address} onChange={handleChange}
-              type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-              placeholder="Street Address *"
-            />
-            <input
-              name="phone" value={form.phone} onChange={handleChange}
-              type="tel" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-              placeholder="Phone Number * (e.g. +234 800 000 0000)"
-            />
-            <input
-              name="whatsapp" value={form.whatsapp} onChange={handleChange}
-              type="tel" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-              placeholder="WhatsApp Number (optional — defaults to phone)"
-            />
+            <input name="address" value={form.address} onChange={handleChange} type="text" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="Street Address *" />
+            <input name="phone" value={form.phone} onChange={handleChange} type="tel" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="Phone Number * (e.g. +234 800 000 0000)" />
+            <input name="whatsapp" value={form.whatsapp} onChange={handleChange} type="tel" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="WhatsApp Number (optional — defaults to phone)" />
             <div className="grid grid-cols-2 gap-4">
-              <input
-                name="openTime" value={form.openTime} onChange={handleChange}
-                type="text" className="w-full p-3.5 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-                placeholder="Opens at (e.g. 8am) *"
-              />
-              <input
-                name="closeTime" value={form.closeTime} onChange={handleChange}
-                type="text" className="w-full p-3.5 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors"
-                placeholder="Closes at (e.g. 6pm) *"
-              />
+              <input name="openTime" value={form.openTime} onChange={handleChange} type="text" className="w-full p-3.5 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="Opens at (e.g. 8am) *" />
+              <input name="closeTime" value={form.closeTime} onChange={handleChange} type="text" className="w-full p-3.5 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm outline-none transition-colors" placeholder="Closes at (e.g. 6pm) *" />
             </div>
-            <textarea
-              name="description" value={form.description} onChange={handleChange}
-              rows="3" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm resize-none outline-none transition-colors"
-              placeholder="Short Description of your business *"
-            />
-            <button
-              onClick={handleRegister}
-              className="w-full py-4 md:py-5 bg-[#008751] text-white rounded-xl md:rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.99] transition-all"
-            >
+            <textarea name="description" value={form.description} onChange={handleChange} rows="3" className="w-full p-3.5 md:p-4 bg-gray-50/50 rounded-xl border border-gray-200 focus:border-[#008751] focus:bg-white font-bold text-sm resize-none outline-none transition-colors" placeholder="Short Description of your business *" />
+            <button onClick={handleRegister} className="w-full py-4 md:py-5 bg-[#008751] text-white rounded-xl md:rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.99] transition-all">
               Next: Media Upload <ChevronRight size={20} />
             </button>
           </div>
@@ -694,12 +614,8 @@ const SubmitView = () => {
         {step === 2 && (
           <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
-              {/* Shop Photo */}
               <input ref={shopPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleShopPhoto} />
-              <div
-                onClick={() => shopPhotoInputRef.current.click()}
-                className="border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl p-8 flex flex-col items-center justify-center text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group overflow-hidden"
-              >
+              <div onClick={() => shopPhotoInputRef.current.click()} className="border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl p-8 flex flex-col items-center justify-center text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group overflow-hidden">
                 {shopPhotoPreview ? (
                   <img src={shopPhotoPreview} alt="Preview" className="w-full h-40 object-cover rounded-xl shadow" />
                 ) : (
@@ -711,12 +627,8 @@ const SubmitView = () => {
                 )}
               </div>
 
-              {/* Certificate */}
               <input ref={certInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleCertificate} />
-              <div
-                onClick={() => certInputRef.current.click()}
-                className="border-2 border-dashed border-gray-200 bg-gray-50/30 rounded-2xl p-6 flex items-center gap-4 text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group"
-              >
+              <div onClick={() => certInputRef.current.click()} className="border-2 border-dashed border-gray-200 bg-gray-50/30 rounded-2xl p-6 flex items-center gap-4 text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group">
                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-100 shadow-sm">
                   <FileText size={20} className={certificate ? 'text-[#008751]' : 'text-gray-400 group-hover:text-[#008751] transition-colors'} />
                 </div>
@@ -730,9 +642,7 @@ const SubmitView = () => {
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 py-4 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl font-black transition-colors">Back</button>
-              <button onClick={handleMediaNext} className="flex-[2] py-4 bg-[#008751] text-white rounded-xl font-black shadow-lg hover:bg-emerald-800 active:scale-[0.99] transition-all">
-                Next: Select Plan
-              </button>
+              <button onClick={handleMediaNext} className="flex-[2] py-4 bg-[#008751] text-white rounded-xl font-black shadow-lg hover:bg-emerald-800 active:scale-[0.99] transition-all">Next: Select Plan</button>
             </div>
           </div>
         )}
@@ -741,20 +651,14 @@ const SubmitView = () => {
         {step === 3 && (
           <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                onClick={() => setSelectedPlan('basic')}
-                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'basic' ? 'border-[#008751] bg-emerald-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}
-              >
+              <div onClick={() => setSelectedPlan('basic')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'basic' ? 'border-[#008751] bg-emerald-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
                 <ShieldCheck size={24} className={selectedPlan === 'basic' ? 'text-[#008751]' : 'text-gray-300'} />
                 <span className="font-black text-gray-900 block mt-3 text-base">Basic Listing</span>
                 <div className="text-2xl font-black text-gray-900 mt-1">₦5,000</div>
                 <p className="text-xs text-gray-500 mt-1 font-medium">12-month listing, standard placement</p>
               </div>
 
-              <div
-                onClick={() => setSelectedPlan('featured')}
-                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'featured' ? 'border-[#FFC107] bg-amber-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}
-              >
+              <div onClick={() => setSelectedPlan('featured')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all transform hover:scale-[1.02] ${selectedPlan === 'featured' ? 'border-[#FFC107] bg-amber-50/50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
                 <Zap size={24} className={selectedPlan === 'featured' ? 'text-[#FFC107]' : 'text-gray-300'} />
                 <span className="font-black text-gray-900 block mt-3 text-base">Featured Placement</span>
                 <div className="text-2xl font-black text-gray-900 mt-1">₦10,000</div>
@@ -762,34 +666,217 @@ const SubmitView = () => {
               </div>
             </div>
 
-            {/* Summary */}
             <div className="bg-gray-50 rounded-2xl p-5 text-sm space-y-2 border border-gray-100">
-              <div className="flex justify-between font-bold text-gray-600">
-                <span>Business</span><span className="text-gray-900 truncate max-w-[180px]">{form.name}</span>
-              </div>
-              <div className="flex justify-between font-bold text-gray-600">
-                <span>Plan Package</span><span className="capitalize text-[#008751] font-black bg-emerald-50 px-2 py-0.5 rounded text-xs">{selectedPlan}</span>
-              </div>
-              <div className="flex justify-between font-black text-base text-gray-900 pt-3 border-t border-gray-200/60 mt-2">
-                <span>Total Due</span><span className="text-[#008751]">₦{selectedPlan === 'featured' ? '10,000' : '5,000'}</span>
-              </div>
+              <div className="flex justify-between font-bold text-gray-600"><span>Business</span><span className="text-gray-900 truncate max-w-[180px]">{form.name}</span></div>
+              <div className="flex justify-between font-bold text-gray-600"><span>Plan Package</span><span className="capitalize text-[#008751] font-black bg-emerald-50 px-2 py-0.5 rounded text-xs">{selectedPlan}</span></div>
+              <div className="flex justify-between font-black text-base text-gray-900 pt-3 border-t border-gray-200/60 mt-2"><span>Total Due</span><span className="text-[#008751]">₦{selectedPlan === 'featured' ? '10,000' : '5,000'}</span></div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-3">
-              <button onClick={() => setStep(2)} className="w-full md:w-1/3 py-4 bg-gray-50 hover:bg-gray-100 text-gray-400 rounded-xl font-black transition-colors" disabled={submitting}>
-                Back
-              </button>
-              <button
-                onClick={handleSubmitAndPay}
-                disabled={submitting}
-                className="w-full md:w-2/3 py-4 bg-[#008751] text-white rounded-xl font-black shadow-xl flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-emerald-800 active:scale-[0.99] transition-all"
-              >
+              <button onClick={() => setStep(2)} className="w-full md:w-1/3 py-4 bg-gray-50 hover:bg-gray-100 text-gray-400 rounded-xl font-black transition-colors" disabled={submitting}>Back</button>
+              <button onClick={handleSubmitAndPay} disabled={submitting} className="w-full md:w-2/3 py-4 bg-[#008751] text-white rounded-xl font-black shadow-xl flex items-center justify-center gap-2 disabled:opacity-60 hover:bg-emerald-800 active:scale-[0.99] transition-all">
                 {submitting ? <><RefreshCw size={18} className="animate-spin" /> Processing Infrastructure...</> : 'Pay & List Business'}
               </button>
             </div>
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// --- VIEW: STEALTH ADMIN CONTROL PORTAL ---
+const AdminView = ({ onNavigate }) => {
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Session token retrieval: prevents login fatigue during administrative routines
+    return !!sessionStorage.getItem('naija_admin_pass');
+  });
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [actionId, setActionId] = useState(null);
+  const [alert, setAlert] = useState(null);
+  const [currentTab, setCurrentTab] = useState('submissions'); // 'submissions' | 'transactions'
+
+  const fetchAdminPayload = async (targetPassword) => {
+    setLoading(true);
+    setAlert(null);
+    try {
+      const activePass = targetPassword || password || sessionStorage.getItem('naija_admin_pass') || '';
+      const res = await fetch(`${API_BASE}/admin/${currentTab}`, {
+        headers: { 'x-admin-password': activePass }
+      });
+      if (!res.ok) {
+        sessionStorage.removeItem('naija_admin_pass');
+        throw new Error('Authentication Rejected: Access keys misaligned.');
+      }
+      const data = await res.json();
+      setItems(data);
+      if (activePass) {
+        sessionStorage.setItem('naija_admin_pass', activePass);
+      }
+      setIsAuthenticated(true);
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message });
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    fetchAdminPayload(password);
+  };
+
+  const handleLogOut = () => {
+    sessionStorage.removeItem('naija_admin_pass');
+    setPassword('');
+    setIsAuthenticated(false);
+    setItems([]);
+    onNavigate('home');
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) fetchAdminPayload();
+  }, [currentTab]);
+
+  const runDecisionMatrix = async (id, decision) => {
+    setActionId(id);
+    setAlert(null);
+    try {
+      const activePass = password || sessionStorage.getItem('naija_admin_pass') || '';
+      const res = await fetch(`${API_BASE}/admin/${decision}/${id}`, {
+        method: 'PUT',
+        headers: { 'x-admin-password': activePass, 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error(`Halt: Could not execute state change '${decision}'`);
+      setAlert({ type: 'success', message: `Listing entry successfully ${decision === 'approve' ? 'approved' : 'rejected'} and synchronized!` });
+      setItems(prev => prev.filter(item => item._id !== id));
+    } catch (err) {
+      setAlert({ type: 'error', message: err.message });
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto my-20 px-4 md:px-0 animate-in zoom-in-95 duration-300">
+        <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-2xl text-center space-y-6">
+          <div className="w-14 h-14 bg-emerald-50 text-[#008751] rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Lock size={24} /></div>
+          <div>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">System Login Gateway</h2>
+            <p className="text-xs text-gray-400 font-extrabold mt-1 uppercase tracking-widest">Verification Engine Protocol</p>
+          </div>
+          {alert && <Alert type={alert.type} message={alert.message} />}
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black tracking-wider uppercase text-gray-400">Security Credentials</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  placeholder="Enter Password Key" 
+                  className="w-full p-4 pr-12 bg-gray-50/80 border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-[#008751] focus:bg-white transition-all" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#008751] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" className="w-full py-4 bg-[#008751] text-white rounded-xl font-black text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 hover:bg-emerald-800 transition-all active:scale-[0.99]">
+              Unlock Dashboard Matrix <ArrowRight size={16} />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 animate-in fade-in duration-500 space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-6">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2"><ShieldAlert className="text-[#008751]" /> Operations Dashboard</h1>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">NaijaBizFind System Matrix Controls</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-gray-100 p-1 rounded-xl border gap-1">
+            <button onClick={() => setCurrentTab('submissions')} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide flex items-center gap-2 transition-all ${currentTab === 'submissions' ? 'bg-white text-gray-900 shadow' : 'text-gray-400 hover:text-gray-600'}`}><ListFilter size={14} /> Pending Approvals</button>
+            <button onClick={() => setCurrentTab('transactions')} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide flex items-center gap-2 transition-all ${currentTab === 'transactions' ? 'bg-white text-gray-900 shadow' : 'text-gray-400 hover:text-gray-600'}`}><CreditCard size={14} /> Transactions Ledger</button>
+          </div>
+          <button onClick={handleLogOut} className="p-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors" title="Secure Exit"><LogOut size={16} /></button>
+        </div>
+      </div>
+
+      {alert && <Alert type={alert.type} message={alert.message} />}
+
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="h-28 bg-gray-50 border border-gray-100 rounded-2xl animate-pulse" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed text-gray-400"><p className="font-bold">No records currently pending verification in this branch segment.</p></div>
+      ) : currentTab === 'submissions' ? (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {items.map(biz => (
+            <div key={biz._id} className="p-5 md:p-6 bg-white border border-gray-100 hover:border-gray-200 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transform hover:scale-[1.005] transition-all">
+              <div className="flex gap-4 items-start flex-1">
+                <img src={getShopPhoto(biz)} className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border shadow-inner flex-shrink-0" alt="Shop Preview" />
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-black text-gray-900 text-base md:text-lg truncate">{biz.name}</h3>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${biz.plan === 'featured' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-600 border'}`}>{biz.plan}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 font-semibold truncate max-w-xl">{biz.description}</p>
+                  <p className="text-[11px] font-bold text-gray-400 flex items-center gap-1"><MapPin size={12} /> {biz.address}, {biz.city} • <Phone size={12} /> {biz.phone}</p>
+                  {biz.images?.certificate && (
+                    <a href={biz.images.certificate} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-[#008751] font-black underline pt-1 group"><Eye size={12} className="group-hover:scale-110 transition-transform" /> View Attached CAC Trade Certificate</a>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
+                <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'reject')} className="flex-1 md:flex-none px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all"><Ban size={14} /> Reject</button>
+                <button disabled={actionId === biz._id} onClick={() => runDecisionMatrix(biz._id, 'approve')} className="flex-1 md:flex-none px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all shadow-md">{actionId === biz._id ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />} Approve Listing</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-300">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs md:text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 font-black text-gray-400 uppercase tracking-wider text-[11px]">
+                  <th className="p-4">Transaction Reference</th>
+                  <th className="p-4">Business Name Mapping</th>
+                  <th className="p-4">Amount</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Settlement Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y font-medium text-gray-700">
+                {items.map(tx => (
+                  <tr key={tx._id} className="hover:bg-gray-50/50">
+                    <td className="p-4 font-bold text-slate-900 font-mono select-all">{tx.reference}</td>
+                    <td className="p-4 font-bold text-gray-900">{tx.businessId?.name || tx.businessId || 'N/A'}</td>
+                    <td className="p-4 font-black text-[#008751]">₦{(tx.amount || 0).toLocaleString()}</td>
+                    <td className="p-4"><span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${tx.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{tx.status}</span></td>
+                    <td className="p-4 text-gray-400 font-semibold">{tx.paidAt ? new Date(tx.paidAt).toLocaleString() : 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -900,6 +987,10 @@ const PaymentSuccessView = ({ onNavigate }) => {
 // --- MAIN APP ---
 export default function App() {
   const [page, setPage] = useState(() => {
+    // Synchronize current route segment matching cleanly with standard paths
+    if (window.location.pathname === STEALTH_ADMIN_PATH) {
+      return 'admin';
+    }
     if (window.location.pathname === '/payment-success' ||
         window.location.search.includes('reference') ||
         window.location.search.includes('trxref')) {
@@ -960,6 +1051,7 @@ export default function App() {
         {page === 'privacy' && <PrivacyView />}
         {page === 'terms' && <TermsView />}
         {page === 'payment-success' && <PaymentSuccessView onNavigate={navigate} />}
+        {page === 'admin' && <AdminView onNavigate={navigate} />}
       </main>
 
       {/* FOOTER */}
