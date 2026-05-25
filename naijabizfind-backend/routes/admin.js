@@ -1,7 +1,7 @@
 import express from 'express';
 import Business from '../models/Business.js';
 import Transaction from '../models/Transaction.js';
-import User from '../models/User.js'; // ✅ Linked to your new User database model schema
+import User from '../models/User.js'; // ✅ Registered User Schema
 import adminAuth from '../middleware/adminAuth.js';
 
 const router = express.Router();
@@ -19,6 +19,43 @@ router.get('/users', adminAuth, async (req, res) => {
   } catch (error) {
     console.error('Admin master registry read failure:', error);
     res.status(500).json({ message: 'Database transaction error on registry tracking', error: error.message });
+  }
+});
+
+// @route   PUT /api/admin/users/blacklist/:id
+// @desc    Toggle user account state between standard operation and blacklist deactivation
+// @access  Admin only
+router.put('/users/blacklist/:id', adminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Target user account document not found.' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'Security Safeguard: System Administrator accounts cannot be blacklisted.' });
+    }
+
+    // Capture fallback states
+    let operationalRole = user.role;
+    if (operationalRole === 'blacklisted') {
+      // Restore previous state context (Check if they have a business storefront or standard explorer account)
+      const hasBusiness = await Business.findOne({ phone: user.phone });
+      user.role = hasBusiness ? 'owner' : 'user';
+    } else {
+      // Deactivate account permissions
+      user.role = 'blacklisted';
+    }
+
+    await user.save();
+    
+    res.json({ 
+      message: `Account status successfully updated to: ${user.role.toUpperCase()}`, 
+      user 
+    });
+  } catch (error) {
+    console.error('Admin user blacklist error:', error);
+    res.status(500).json({ message: 'Internal server error executing account deactivation', error: error.message });
   }
 });
 
