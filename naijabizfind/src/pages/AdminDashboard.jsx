@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ShieldAlert, Users, Store, CheckCircle, XCircle, LogOut, Activity, 
   Database, ChevronRight, Loader2, Clock, MapPin, Phone, Eye, Check, 
-  Ban, TrendingUp, Zap, ShieldCheck, FileSpreadsheet, CreditCard, FileText, X
+  Ban, TrendingUp, Zap, ShieldCheck, FileSpreadsheet, CreditCard, FileText, X, Mail, ShieldAlert as BlacklistIcon
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://naijabizfind.onrender.com/api';
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   const [scrollY, setScrollY] = useState(0);
 
   // Core Orchestration States
-  const [currentTab, setCurrentTab] = useState('overview'); // 'overview' | 'submissions' | 'all' | 'transactions'
+  const [currentTab, setCurrentTab] = useState('overview'); // 'overview' | 'submissions' | 'all' | 'transactions' | 'users'
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(null);
   const [cacPreviewUrl, setCacPreviewUrl] = useState(null);
@@ -85,11 +85,16 @@ export default function AdminDashboard() {
   // Live Data Matrices
   const [businesses, setBusinesses] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [usersList, setUsersList] = useState([]); // Master User State Cache
 
   // Administrative Filtering Controls
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // User Tab Search & Filtering Controls
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('');
 
   // Parallax Scroll Tracking
   useEffect(() => {
@@ -117,6 +122,11 @@ export default function AdminDashboard() {
       const transRes = await fetch(`${API_BASE}/admin/transactions`, { headers: requestHeaders });
       const transData = await transRes.json();
       if (transRes.ok) setTransactions(transData);
+
+      // 3. Fetch Master List of Registered Platform Users
+      const usersRes = await fetch(`${API_BASE}/admin/users`, { headers: requestHeaders });
+      const usersData = await usersRes.json();
+      if (usersRes.ok) setUsersList(usersData);
 
     } catch (err) {
       console.error("Failed to synchronize admin command center nodes:", err);
@@ -157,7 +167,43 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error(err);
-    } bits: {
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  // Live Blacklist / Account Deactivation Toggle Engine
+  const toggleUserBlacklist = async (id, currentRole) => {
+    setActionInProgress(id);
+    const targetAction = currentRole === 'blacklisted' ? 'activate' : 'blacklist';
+    const confirmProceed = window.confirm(`Are you sure you want to change this account's status to ${targetAction.toUpperCase()}?`);
+    if (!confirmProceed) {
+      setActionInProgress(null);
+      return;
+    }
+
+    try {
+      const adminSecret = localStorage.getItem('adminKey') || '';
+      const res = await fetch(`${API_BASE}/admin/users/blacklist/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': adminSecret
+        }
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message);
+        // Refresh local memory tracking state seamlessly
+        setUsersList(prev => prev.map(user => user._id === id ? { ...user, role: data.user.role } : user));
+      } else {
+        alert(`Failed to update account scope: ${data.message}`);
+      }
+    } catch (err) {
+      console.error("Blacklist toggle error:", err);
+      alert("Network error updating security clearance level.");
+    } finally {
       setActionInProgress(null);
     }
   };
@@ -166,7 +212,6 @@ export default function AdminDashboard() {
   const totalRevenue = transactions.filter(t => t.status === 'success').reduce((sum, t) => sum + (t.amount || 0), 0);
   const pendingApprovalsCount = businesses.filter(b => b.status === 'pending' && b.isPaid).length;
   const activeListingsCount = businesses.filter(b => b.status === 'approved' && b.isPaid).length;
-  const featuredPlacementsCount = businesses.filter(b => b.plan === 'featured' && b.isPaid).length;
 
   // Filter listings across master tables cleanly
   const filteredBusinesses = businesses.filter(b => {
@@ -174,6 +219,16 @@ export default function AdminDashboard() {
     const matchesPayment = paymentFilter === '' || (paymentFilter === 'paid' ? b.isPaid : !b.isPaid);
     const matchesSearch = searchQuery === '' || b.name?.toLowerCase().includes(searchQuery.toLowerCase()) || b.city?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesPayment && matchesSearch;
+  });
+
+  // Filter accounts list across dataset matrices cleanly
+  const filteredUsers = usersList.filter(u => {
+    const matchesRole = userRoleFilter === '' || u.role === userRoleFilter;
+    const matchesSearch = userSearchQuery === '' || 
+      u.username?.toLowerCase().includes(userSearchQuery.toLowerCase()) || 
+      u.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) || 
+      u.phone?.includes(userSearchQuery);
+    return matchesRole && matchesSearch;
   });
 
   return (
@@ -214,6 +269,10 @@ export default function AdminDashboard() {
           <button onClick={() => setCurrentTab('all')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'all' ? 'bg-gray-900 text-white border border-gray-700 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
             <Store size={18} className="text-emerald-500" /> All Businesses
           </button>
+          <button onClick={() => setCurrentTab('users')} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'users' ? 'bg-gray-900 text-white border border-gray-700 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
+            <div className="flex items-center gap-3"><Users size={18} className="text-purple-400" /> User Accounts</div>
+            {usersList.length > 0 && <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{usersList.length}</span>}
+          </button>
           <button onClick={() => setCurrentTab('transactions')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'transactions' ? 'bg-gray-900 text-white border border-gray-700 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
             <Database size={18} className="text-blue-400" /> Ledger Logs
           </button>
@@ -234,6 +293,7 @@ export default function AdminDashboard() {
               {currentTab === 'overview' && 'Admin Command Center'}
               {currentTab === 'submissions' && 'Verification Management'}
               {currentTab === 'all' && 'Master Platform Registry'}
+              {currentTab === 'users' && 'User Access Accounts Ecosystem'}
               {currentTab === 'transactions' && 'Financial Settlement Records'}
             </h1>
             <p className="text-gray-400 text-sm mt-1 font-medium">Review secure server structures and authorize directory nodes.</p>
@@ -243,7 +303,7 @@ export default function AdminDashboard() {
         {/* 3D Admin Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <AdminTiltCard title="Awaiting Verification" value={isFetchingData ? "..." : pendingApprovalsCount} icon={Clock} delay="0s" colorClass="bg-yellow-500/20 text-yellow-500" />
-          <AdminTiltCard title="Active Listings" value={isFetchingData ? "..." : activeListingsCount} icon={Store} delay="0.1s" colorClass="bg-green-500/20 text-green-500" />
+          <AdminTiltCard title="Platform Registrations" value={isFetchingData ? "..." : usersList.length} icon={Users} delay="0.1s" colorClass="bg-purple-500/20 text-purple-400" />
           <AdminTiltCard title="Gross Settlement Roll" value={isFetchingData ? "..." : `₦${totalRevenue.toLocaleString()}`} icon={TrendingUp} delay="0.2s" colorClass="bg-blue-500/20 text-blue-500" />
         </div>
 
@@ -280,25 +340,27 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-6 shadow-2xl space-y-4">
-              <h3 className="font-black text-white text-base tracking-tight">Category Distribution</h3>
-              <p className="text-xs text-gray-500">System architecture allocation charts</p>
-              <div className="space-y-3 pt-2">
-                {[
-                  { name: 'Retail & Fashion', count: businesses.filter(b => b.category === 'retail' || b.category === 'fashion').length, pct: 'w-[50%]', color: 'bg-emerald-500' },
-                  { name: 'Food Services', count: businesses.filter(b => b.category === 'food').length, pct: 'w-[35%]', color: 'bg-amber-500' },
-                  { name: 'Tech & Infrastructure', count: businesses.filter(b => b.category === 'technology' || b.category === 'tech').length, pct: 'w-[20%]', color: 'bg-blue-500' },
-                  { name: 'Automotive Mechanics', count: businesses.filter(b => b.category === 'automotive').length, pct: 'w-[15%]', color: 'bg-purple-500' }
-                ].map((cat, i) => (
-                  <div key={i} className="space-y-1">
-                    <div className="flex justify-between text-xs font-bold text-gray-300">
-                      <span>{cat.name}</span>
-                      <span className="text-white">{cat.count} listings</span>
-                    </div>
-                    <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                      <div className={`${cat.color} ${cat.pct} h-full rounded-full`} />
-                    </div>
+              <h3 className="font-black text-white text-base tracking-tight">Ecosystem Framework Proportions</h3>
+              <p className="text-xs text-gray-500">Platform operational allocation matrices</p>
+              <div className="space-y-4 pt-2">
+                <div>
+                  <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
+                    <span>Business Storefront Owners</span>
+                    <span>{usersList.filter(u => u.role === 'owner').length} profile nodes</span>
                   </div>
-                ))}
+                  <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-amber-500 h-full rounded-full w-[45%]" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
+                    <span>Explorer Consumers</span>
+                    <span>{usersList.filter(u => u.role === 'user').length} active accounts</span>
+                  </div>
+                  <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-blue-500 h-full rounded-full w-[80%]" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -396,8 +458,8 @@ export default function AdminDashboard() {
                   <option value="unpaid">Unpaid Incomplete</option>
                 </select>
                 <div className="flex items-center gap-2 px-3 text-xs font-bold text-gray-500 border-l border-gray-800">
-                  <Users size={16} />
-                  <span>Showing {filteredBusinesses.length} active matrices</span>
+                  <Store size={16} className="text-[#008751]" />
+                  <span>Showing {filteredBusinesses.length} active storefronts</span>
                 </div>
               </div>
             </div>
@@ -429,7 +491,98 @@ export default function AdminDashboard() {
         )}
 
         {/* =========================================
-            TAB 4: LEDGER SETTLEMENT TRANSACTIONS
+            TAB 4: USER ACCESS ACCOUNTS ECOSYSTEM
+        ============================================= */}
+        {currentTab === 'users' && (
+          <div className="space-y-6 animate-[fadeInUp_0.5s_ease-out]">
+            <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-6 shadow-2xl space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <input 
+                    type="text" 
+                    value={userSearchQuery}
+                    onChange={e => setUserSearchQuery(e.target.value)}
+                    placeholder="Search registered network users (username, email, or telephone logs)..."
+                    className="w-full px-4 py-3 bg-black/40 border border-gray-800 text-white rounded-xl text-xs font-bold outline-none focus:border-[#008751] transition-colors"
+                  />
+                </div>
+                <div>
+                  <select 
+                    value={userRoleFilter} 
+                    onChange={e => setUserRoleFilter(e.target.value)} 
+                    className="w-full p-3 bg-black/40 border border-gray-800 rounded-xl text-xs font-bold outline-none text-gray-400"
+                  >
+                    <option value="">All Account Scopes</option>
+                    <option value="user">Explorer (Standard Customer)</option>
+                    <option value="owner">Business Owner</option>
+                    <option value="blacklisted">Blacklisted / Deactivated</option>
+                    <option value="admin">System Admin</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {isFetchingData ? (
+                <div className="col-span-full flex justify-center p-12"><Loader2 className="animate-spin text-purple-500" size={32} /></div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="col-span-full text-center py-12 border border-dashed border-gray-800 rounded-2xl">
+                  <Users className="mx-auto text-gray-600 mb-2" size={32} />
+                  <p className="text-gray-500 font-bold">No user profiles matched this query.</p>
+                </div>
+              ) : (
+                filteredUsers.map(user => (
+                  <div key={user._id} className={`p-5 bg-gray-900/40 border rounded-2xl flex flex-col justify-between hover:shadow-xl transition-all space-y-4 ${user.role === 'blacklisted' ? 'border-red-900/50 hover:border-red-800' : 'border-gray-800 hover:border-gray-700'}`}>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-bold text-white text-base tracking-tight truncate max-w-[65%]">{user.username}</h4>
+                        <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
+                          user.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                          user.role === 'owner' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                          user.role === 'blacklisted' ? 'bg-red-900/30 text-red-500 border-red-900/40 animate-pulse' :
+                          'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        }`}>
+                          {user.role === 'owner' ? 'Business Owner' : user.role === 'admin' ? 'System Admin' : user.role === 'blacklisted' ? 'Blacklisted' : 'Explorer'}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs text-gray-400 font-medium">
+                        <p className="flex items-center gap-2 truncate"><Mail size={12} className="text-gray-500 flex-shrink-0" /> {user.email}</p>
+                        <p className="flex items-center gap-2"><Phone size={12} className="text-gray-500 flex-shrink-0" /> {user.phone || 'No direct log phone'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-850 gap-2">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                      {user.role !== 'admin' && (
+                        <button 
+                          disabled={actionInProgress === user._id}
+                          onClick={() => toggleUserBlacklist(user._id, user.role)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wide flex items-center gap-1 transition-all ${
+                            user.role === 'blacklisted' 
+                              ? 'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500 hover:text-white' 
+                              : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white'
+                          }`}
+                        >
+                          {actionInProgress === user._id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : user.role === 'blacklisted' ? (
+                            <>Unban Account</>
+                          ) : (
+                            <><BlacklistIcon size={12} /> Blacklist</>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
+            TAB 5: LEDGER SETTLEMENT TRANSACTIONS
         ============================================= */}
         {currentTab === 'transactions' && (
           <div className="space-y-6 animate-[fadeInUp_0.5s_ease-out]">
