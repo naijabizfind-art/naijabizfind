@@ -4,7 +4,7 @@ import {
   Phone, MessageCircle, Scissors, Coffee, ShoppingBag, Settings, 
   PlusCircle, Globe, CheckCircle2, ArrowRight, Clock, Heart, 
   Share2, Navigation, ArrowLeft, ShieldCheck, Zap, FileText, Upload,
-  Loader2, AlertCircle, CheckCircle, RefreshCw
+  Loader2, AlertCircle, CheckCircle, RefreshCw, LogOut
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -177,6 +177,7 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
+  const [heroSearchInput, setHeroSearchInput] = useState('');
 
   // Scroll tracking for Parallax implementation
   useEffect(() => {
@@ -240,11 +241,14 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
             <div className="flex bg-white rounded-xl p-1.5 shadow-2xl max-w-md mx-auto md:mx-0 overflow-hidden border border-white/20 backdrop-blur-md focus-within:ring-2 focus-within:ring-yellow-400 transition-all duration-300 transform hover:scale-[1.01]">
               <input
                 type="text"
+                value={heroSearchInput}
+                onChange={(e) => setHeroSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onNavigate('directory', { cityFilter: heroSearchInput })}
                 placeholder="e.g. Tailor in Lagos"
                 className="flex-1 bg-transparent border-none focus:ring-0 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 outline-none"
               />
               <button
-                onClick={() => onNavigate('directory')}
+                onClick={() => onNavigate('directory', { cityFilter: heroSearchInput })}
                 className="bg-[#008751] text-white px-5 md:px-7 py-3 rounded-lg font-extrabold text-sm hover:bg-emerald-800 active:scale-95 transition-all shadow-md"
               >
                 Search
@@ -336,11 +340,11 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
 };
 
 // --- VIEW: DIRECTORY ---
-const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
+const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(initialCategory || '');
-  const [searchCity, setSearchCity] = useState('');
+  const [searchCity, setSearchCity] = useState(initialCity || '');
 
   const fetchBusinesses = async () => {
     setLoading(true);
@@ -394,7 +398,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
         <button
           onClick={() => setActiveCategory('')}
-          className={`flex-shrink-0 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === '' ? 'bg-[#008751] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-500'}`}
+          className={`flex-shrink-0 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === '' ? 'bg-[#008751]' : 'bg-white border border-gray-200 text-gray-500'}`}
         >
           All
         </button>
@@ -402,7 +406,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
           <button
             key={cat.value}
             onClick={() => setActiveCategory(cat.value)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === cat.value ? 'bg-[#008751] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-500'}`}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === cat.value ? 'bg-[#008751]' : 'bg-white border border-gray-200 text-gray-500'}`}
           >
             {cat.icon} {cat.name}
           </button>
@@ -910,23 +914,55 @@ export default function App() {
   const [selectedBiz, setSelectedBiz] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [directoryOptions, setDirectoryOptions] = useState({});
+  
+  // Custom Dynamic State for Page Toggling Animations
+  const [isTogglingPage, setIsTogglingPage] = useState(false);
 
   const navigate = (p, opts = {}) => {
-    setPage(p);
-    setSelectedBiz(null);
-    setIsMenuOpen(false);
-    setDirectoryOptions(opts);
-    window.scrollTo(0, 0);
+    // Access-Control Route Guard check for Normal Shoppers
+    if (p === 'submit') {
+      const activeRole = localStorage.getItem('userRole');
+      if (activeRole !== 'owner') {
+        alert("Access Notice: Standard Explorer accounts cannot submit businesses. Please sign up or authenticate with a dedicated Business Owner workspace to unlock listings execution.");
+        window.location.href = '/signup?role=owner';
+        return;
+      }
+    }
+
+    // Initialize View Switch Animation Sequence Loop
+    setIsTogglingPage(true);
+    setTimeout(() => {
+      setPage(p);
+      setSelectedBiz(null);
+      setIsMenuOpen(false);
+      setDirectoryOptions(opts);
+      window.scrollTo(0, 0);
+      setIsTogglingPage(false);
+    }, 400);
   };
 
   const handleSelectBusiness = (biz) => {
     setSelectedBiz(biz);
-    setPage('detail');
-    window.scrollTo(0, 0);
+    navigate('detail');
+  };
+
+  // Secure Sign-Out Sequence
+  const handleClearSession = () => {
+    localStorage.clear();
+    window.location.href = '/login';
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-emerald-100">
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-emerald-100 relative">
+      
+      {/* GLOBAL TAB TRANSITION LOADER SYSTEM */}
+      {isTogglingPage && (
+        <div className="fixed inset-0 bg-white/70 backdrop-blur-md z-[9999] flex flex-col items-center justify-center animate-in fade-in duration-300">
+          <Loader2 size={40} className="text-[#008751] animate-spin mb-2" />
+          <p className="text-xs font-black tracking-widest text-gray-400 uppercase">Synchronizing Data Modules</p>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <nav className="sticky top-0 z-[100] bg-white/90 backdrop-blur-md border-b border-gray-100 py-3 md:py-4 px-4 md:px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -938,6 +974,9 @@ export default function App() {
             <button onClick={() => navigate('home')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'home' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>HOME</button>
             <button onClick={() => navigate('directory')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'directory' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>DIRECTORY</button>
             <button onClick={() => navigate('submit')} className="bg-[#008751] text-white px-5 py-2 rounded-lg text-xs font-black shadow-md hover:bg-emerald-800 hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all">List Business</button>
+            <button onClick={handleClearSession} className="text-[11px] font-black text-red-500 hover:text-red-700 tracking-wide flex items-center gap-1 transition-colors uppercase">
+              <LogOut size={12} /> Sign Out
+            </button>
           </div>
           <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -946,6 +985,7 @@ export default function App() {
             <button onClick={() => navigate('home')} className="text-left font-black text-[11px] uppercase text-gray-600 py-2 border-b border-gray-50">Home</button>
             <button onClick={() => navigate('directory')} className="text-left font-black text-[11px] uppercase text-gray-600 py-2 border-b border-gray-50">Browse Directory</button>
             <button onClick={() => navigate('submit')} className="w-full bg-[#008751] text-white py-4 rounded-xl font-black uppercase text-xs mt-2 shadow-lg hover:bg-emerald-800 transition-colors">List My Business</button>
+            <button onClick={handleClearSession} className="text-left font-black text-[11px] uppercase text-red-500 py-2 transition-colors">Sign Out From Account</button>
           </div>
         )}
       </nav>
@@ -953,7 +993,7 @@ export default function App() {
       {/* PAGE ROUTER */}
       <main>
         {page === 'home' && <HomeView onNavigate={navigate} onSelectBusiness={handleSelectBusiness} />}
-        {page === 'directory' && <DirectoryView onSelectBusiness={handleSelectBusiness} initialCategory={directoryOptions.category} />}
+        {page === 'directory' && <DirectoryView onSelectBusiness={handleSelectBusiness} initialCategory={directoryOptions.category} initialCity={directoryOptions.cityFilter} />}
         {page === 'detail' && <DetailView business={selectedBiz} onBack={() => navigate('directory')} />}
         {page === 'submit' && <SubmitView />}
         {page === 'about' && <AboutView />}
