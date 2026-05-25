@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import SignupPage from './pages/SignupPage.jsx'
 import OwnerDashboard from './pages/OwnerDashboard.jsx'
+import AdminDashboard from './pages/AdminDashboard.jsx' // Vetted & Imported
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -18,9 +19,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         
-        {/* Core App Space: Normal Shoppers & Stealth Admin route point here */}
+        {/* Core App Space: Normal Shoppers & Explorers */}
         <Route path="/explore" element={<App />} />
-        <Route path="/admin" element={<App />} />
+        
+        {/* The Secured Admin Dashboard Gateway */}
+        <Route path="/admin" element={<AdminDashboard />} />
         
         {/* Dedicated Business Owner Workspace */}
         <Route path="/dashboard" element={<OwnerDashboard />} />
