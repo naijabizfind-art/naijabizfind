@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+
+const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [logoClicks, setLogoClicks] = useState(0);
   const [isAdminMode, setIsAdminMode] = useState(false);
   
-  // Track form entries locally for state persistence simulation
-  const [email, setEmail] = useState('');
+  // Controlled input form hooks
+  const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Stealth Trigger Logic
   const handleLogoClick = () => {
@@ -18,24 +22,45 @@ export default function LoginPage() {
     
     if (newCount === 5) {
       setIsAdminMode(true);
-      setLogoClicks(0); // Reset count safely
+      setLogoClicks(0); 
     }
   };
 
-  const handleNormalLogin = (e) => {
+  const handleNormalLogin = async (e) => {
     e.preventDefault();
-    
-    // Core Role Determination Architecture
-    // For a real production app, this info is returned from POST /api/auth/login
-    if (email.includes('owner') || email.includes('biz')) {
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      // Express router endpoint tracking validation check inside your businesses.js module
+      const res = await fetch(`${API_BASE}/businesses/owner-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneOrEmail })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Fallback approach if no registered business profile document matches the workspace phone query
+        // Safely paths alternative basic consumer scopes
+        localStorage.setItem('userRole', 'user');
+        localStorage.setItem('username', 'Explorer User');
+        navigate('/explore');
+        return;
+      }
+
+      // If business registration properties map cleanly, cache contextual settings instantly
       localStorage.setItem('userRole', 'owner');
-      localStorage.setItem('username', 'Nii Kpakpo');
-      localStorage.setItem('userPhone', '+2348031234567'); // Match backend payload
+      localStorage.setItem('userPhone', data.phone);
+      localStorage.setItem('username', data.name);
       navigate('/dashboard');
-    } else {
+
+    } catch (err) {
+      setErrorMessage('Database stream lost. Defaulting to standard offline access.');
       localStorage.setItem('userRole', 'user');
-      localStorage.setItem('username', 'Explorer Guy');
       navigate('/explore');
+    } bits: {
+      setIsSubmitting(false);
     }
   };
 
@@ -43,10 +68,8 @@ export default function LoginPage() {
     e.preventDefault();
     const secretKey = e.target.adminKey.value;
     
-    // Seed admin credentials globally
     localStorage.setItem('adminKey', secretKey);
     localStorage.setItem('userRole', 'admin');
-    
     navigate('/admin'); 
   };
 
@@ -74,7 +97,6 @@ export default function LoginPage() {
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="text-center mb-8">
-              {/* Stealth Toggle Switch */}
               <div 
                 onClick={handleLogoClick}
                 className="w-12 h-12 bg-[#008751] rounded-xl flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-105 transition-transform shadow-lg shadow-green-900/20 select-none"
@@ -82,36 +104,45 @@ export default function LoginPage() {
                 <span className="text-white font-black text-2xl leading-none">N</span>
               </div>
               <h2 className="text-2xl font-black text-gray-900">Welcome Back</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Tip: Enter an email containing <code className="bg-gray-100 px-1 rounded text-[#008751]">owner</code> to test Business view.
-              </p>
+              <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
             </div>
+
+            {errorMessage && (
+              <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-700 p-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold">
+                <AlertCircle size={14} /> {errorMessage}
+              </div>
+            )}
 
             <form onSubmit={handleNormalLogin} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Phone Number or Email</label>
                 <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text" 
                   required 
+                  value={phoneOrEmail}
+                  onChange={e => setPhoneOrEmail(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
-                  placeholder="owner@gmail.com or user@gmail.com" 
+                  placeholder="e.g. +2348031234567" 
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
                 <input 
                   type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   required 
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
                   placeholder="••••••••" 
                 />
               </div>
 
-              <button type="submit" className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all transform active:scale-95 shadow-lg shadow-green-900/20">
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
                 Log In
               </button>
               
