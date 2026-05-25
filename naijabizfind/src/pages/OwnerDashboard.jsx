@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Store, PlusCircle, CreditCard, LogOut, 
-  Settings, TrendingUp, Users, Star, Menu, X, Loader2, Upload, AlertCircle, CheckCircle2 
+  Settings, TrendingUp, Users, Star, Menu, X, Loader2, Upload, AlertCircle, CheckCircle2, Edit3, Crown, Check, Activity
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -82,12 +82,13 @@ export default function OwnerDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Navigation State
-  const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add
+  const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add, settings
   
   // Data State
   const [myListings, setMyListings] = useState([]);
   const [isFetchingListings, setIsFetchingListings] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -143,45 +144,81 @@ export default function OwnerDashboard() {
     setFiles({ ...files, [e.target.name]: e.target.files[0] });
   };
 
-  // --- SUBMIT REGISTRATION PIPELINE ---
-  const handleRegisterBusiness = async (e) => {
+  // --- EDIT LISTING INITIATOR ---
+  const triggerEdit = (business) => {
+    setFormData({
+      name: business.name, category: business.category, city: business.city, 
+      address: business.address, description: business.description, email: business.email, 
+      phone: business.phone, whatsapp: business.whatsapp || '', 
+      openTime: business.workingHours?.open || '09:00', closeTime: business.workingHours?.close || '18:00', 
+      plan: business.plan || 'basic'
+    });
+    setEditingId(business._id);
+    setActiveTab('add');
+  };
+
+  // --- SUBMIT / UPDATE REGISTRATION PIPELINE ---
+  const handleRegisterOrUpdate = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // 1. Upload Files via the /api/upload route
-      const uploadData = new FormData();
-      uploadData.append('shopPhoto', files.shopPhoto);
-      if (files.certificate) uploadData.append('certificate', files.certificate);
+      let shopPhotoUrl = null;
+      let certificateUrl = null;
 
-      const uploadRes = await fetch(`${API_BASE}/upload`, {
-        method: 'POST',
-        body: uploadData
-      });
-      const uploadUrls = await uploadRes.json();
+      // 1. Upload Files via the /api/upload route only if new files were selected
+      if (files.shopPhoto || files.certificate) {
+        const uploadData = new FormData();
+        if (files.shopPhoto) uploadData.append('shopPhoto', files.shopPhoto);
+        if (files.certificate) uploadData.append('certificate', files.certificate);
 
-      if (!uploadRes.ok) throw new Error(uploadUrls.message || 'Upload failed');
+        const uploadRes = await fetch(`${API_BASE}/upload`, {
+          method: 'POST',
+          body: uploadData
+        });
+        const uploadUrls = await uploadRes.json();
 
-      // 2. Register the Business
-      const businessPayload = {
-        ...formData,
-        shopPhoto: uploadUrls.shopPhoto,
-        certificate: uploadUrls.certificate
-      };
+        if (!uploadRes.ok) throw new Error(uploadUrls.message || 'Upload failed');
+        shopPhotoUrl = uploadUrls.shopPhoto;
+        certificateUrl = uploadUrls.certificate;
+      }
 
-      const regRes = await fetch(`${API_BASE}/businesses/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(businessPayload)
-      });
-      const registeredData = await regRes.json();
+      // 2. Prepare Payload
+      const businessPayload = { ...formData };
+      if (shopPhotoUrl) businessPayload.shopPhoto = shopPhotoUrl;
+      if (certificateUrl) businessPayload.certificate = certificateUrl;
 
-      if (!regRes.ok) throw new Error(registeredData.message || 'Registration failed');
+      let res, data;
 
-      // Success! Reset form and jump to listings
-      alert('Business registered successfully! Awaiting payment & approval.');
-      setMyListings([registeredData, ...myListings]);
-      setActiveTab('listings');
+      if (editingId) {
+        // UPDATE EXISTING (Requires backend PUT route)
+        res = await fetch(`${API_BASE}/businesses/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(businessPayload)
+        });
+        data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Update failed');
+        alert('Listing updated successfully!');
+        fetchUserListings(); // Refresh data
+        setActiveTab('listings');
+      } else {
+        // REGISTER NEW
+        res = await fetch(`${API_BASE}/businesses/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(businessPayload)
+        });
+        data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Registration failed');
+        
+        // IMMEDIATE PAYMENT TRIGGER
+        alert('Saved successfully! Redirecting to secure payment...');
+        handlePayment(data); 
+      }
+
+      // Success! Reset form
+      setEditingId(null);
       setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' });
       setFiles({ shopPhoto: null, certificate: null });
 
@@ -273,10 +310,10 @@ export default function OwnerDashboard() {
           <button onClick={() => { setActiveTab('listings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'listings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <Store size={18} /> My Listings
           </button>
-          <button onClick={() => { setActiveTab('add'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); setActiveTab('add'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <PlusCircle size={18} /> Add New Listing
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm rounded-xl font-semibold text-sm transition-all">
+          <button onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'settings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <Settings size={18} /> Settings
           </button>
         </nav>
@@ -304,14 +341,15 @@ export default function OwnerDashboard() {
               <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
                 {activeTab === 'overview' && 'Business Dashboard'}
                 {activeTab === 'listings' && 'My Listings'}
-                {activeTab === 'add' && 'Create Listing'}
+                {activeTab === 'add' && (editingId ? 'Edit Listing' : 'Create New Listing')}
+                {activeTab === 'settings' && 'Account Settings'}
               </h1>
               <p className="text-gray-500 text-xs md:text-sm mt-1 font-medium hidden md:block">Manage your storefronts and monitor performance.</p>
             </div>
           </div>
           
           {activeTab !== 'add' && (
-            <button onClick={() => setActiveTab('add')} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
+            <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); setActiveTab('add'); }} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
               <div className="absolute inset-0 w-full h-full bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
               <PlusCircle size={18} className="relative z-10 hidden md:block" />
               <span className="relative z-10">Add Listing</span>
@@ -341,7 +379,7 @@ export default function OwnerDashboard() {
                 </div>
                 <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">Ready to expand your reach?</h3>
                 <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing organic traffic from users across NaijaBizFind.</p>
-                <button onClick={() => setActiveTab('add')} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
+                <button onClick={() => { setEditingId(null); setActiveTab('add'); }} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
                   <PlusCircle size={20} /> Register Business
                 </button>
               </div>
@@ -391,7 +429,7 @@ export default function OwnerDashboard() {
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-xl font-black text-gray-900">{biz.name}</h3>
-                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded capitalize">{biz.category}</span>
+                        <span className="text-[10px] font-black text-white bg-[#008751] px-2 py-1 rounded uppercase">{biz.plan}</span>
                       </div>
                       <p className="text-sm text-gray-500 mb-6 line-clamp-2">{biz.description}</p>
                       
@@ -401,11 +439,16 @@ export default function OwnerDashboard() {
                           <span className="capitalize">{biz.status}</span>
                         </div>
                         
-                        {!biz.isPaid && (
-                          <button onClick={() => handlePayment(biz)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">
-                            <CreditCard size={16} /> Pay Listing Fee
+                        <div className="flex gap-2">
+                          <button onClick={() => triggerEdit(biz)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                            <Edit3 size={18} />
                           </button>
-                        )}
+                          {!biz.isPaid && (
+                            <button onClick={() => handlePayment(biz)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg">
+                              Pay Now
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -416,70 +459,151 @@ export default function OwnerDashboard() {
         )}
 
         {/* =========================================
-            TAB 3: ADD NEW LISTING (Registration Pipeline)
+            TAB 3: ADD / EDIT LISTING
         ============================================= */}
         {activeTab === 'add' && (
-          <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-6 md:p-10 shadow-2xl animate-[fadeInUp_0.5s_ease-out]">
-            <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-              <Store className="text-[#008751]" /> Business Details
-            </h2>
-            
-            <form onSubmit={handleRegisterBusiness} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
-                  <input required name="name" value={formData.name} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
-                  <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all">
-                    <option value="">Select Category...</option>
-                    <option value="technology">Technology & IT</option>
-                    <option value="automotive">Automotive</option>
-                    <option value="retail">Retail & Fashion</option>
-                    <option value="food">Food & Restaurant</option>
-                    <option value="services">Professional Services</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Email (For Invoices)</label>
-                  <input type="email" required name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number</label>
-                  <input required name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Address & City</label>
-                  <div className="flex gap-4">
-                    <input required name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="w-1/3 bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all" />
-                    <input required name="address" placeholder="Street Address" value={formData.address} onChange={handleInputChange} className="w-2/3 bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all" />
+          <div className="max-w-5xl mx-auto animate-[fadeInUp_0.5s_ease-out]">
+            <form onSubmit={handleRegisterOrUpdate} className="space-y-8">
+              
+              {/* Premium Package Selection UI */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl">
+                <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                  <Crown className="text-yellow-500" /> Choose Your Package
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Basic */}
+                  <div onClick={() => setFormData({...formData, plan: 'basic'})} className={`cursor-pointer rounded-2xl p-6 border-2 transition-all ${formData.plan === 'basic' ? 'border-[#008751] bg-green-50/50 shadow-lg' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
+                    <div className="text-sm font-bold text-gray-500 uppercase">Basic</div>
+                    <div className="text-3xl font-black text-gray-900 my-2">₦5,000</div>
+                    <ul className="text-sm text-gray-600 space-y-2 mt-4">
+                      <li className="flex items-center gap-2"><Check size={16} className="text-[#008751]"/> Standard Listing</li>
+                      <li className="flex items-center gap-2"><Check size={16} className="text-[#008751]"/> Search Indexing</li>
+                    </ul>
+                  </div>
+                  {/* Featured */}
+                  <div onClick={() => setFormData({...formData, plan: 'featured'})} className={`cursor-pointer rounded-2xl p-6 border-2 transition-all ${formData.plan === 'featured' ? 'border-blue-500 bg-blue-50/50 shadow-lg' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
+                    <div className="text-sm font-bold text-blue-500 uppercase flex justify-between">Featured <Star size={16} fill="currentColor"/></div>
+                    <div className="text-3xl font-black text-gray-900 my-2">₦10,000</div>
+                    <ul className="text-sm text-gray-600 space-y-2 mt-4">
+                      <li className="flex items-center gap-2"><Check size={16} className="text-blue-500"/> Priority Ranking</li>
+                      <li className="flex items-center gap-2"><Check size={16} className="text-blue-500"/> Trust Badge</li>
+                    </ul>
+                  </div>
+                  {/* Ultimate Ads */}
+                  <div onClick={() => setFormData({...formData, plan: 'ultimate'})} className={`cursor-pointer rounded-2xl p-6 border-2 relative overflow-hidden transition-all ${formData.plan === 'ultimate' ? 'border-purple-500 bg-purple-50/50 shadow-xl scale-105' : 'border-gray-100 hover:border-gray-200 bg-white'}`}>
+                    <div className="absolute top-0 right-0 bg-purple-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-lg uppercase">Best ROI</div>
+                    <div className="text-sm font-bold text-purple-600 uppercase">Ultimate + Ads</div>
+                    <div className="text-3xl font-black text-gray-900 my-2">₦25,000</div>
+                    <ul className="text-sm text-gray-600 space-y-2 mt-4">
+                      <li className="flex items-center gap-2 font-bold text-purple-700"><Check size={16} className="text-purple-500"/> WhatsApp Ads Broadcast</li>
+                      <li className="flex items-center gap-2 font-bold text-purple-700"><Check size={16} className="text-purple-500"/> Homepage Banner Spot</li>
+                      <li className="flex items-center gap-2"><Check size={16} className="text-purple-500"/> SEO Optimization</li>
+                    </ul>
                   </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
-                  <textarea required name="description" rows="3" value={formData.description} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751] transition-all"></textarea>
-                </div>
-                
-                {/* File Uploads */}
-                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
-                  <Upload className="mx-auto text-gray-400 mb-2" />
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Upload Shop Photo (Required)</label>
-                  <input type="file" required accept="image/*" name="shopPhoto" onChange={handleFileChange} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-                </div>
-                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
-                  <CheckCircle2 className="mx-auto text-gray-400 mb-2" />
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Upload Certificate (Optional)</label>
-                  <input type="file" accept="image/*,.pdf" name="certificate" onChange={handleFileChange} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+
+              {/* Data Form */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
+                    <input required name="name" value={formData.name} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
+                    <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]">
+                      <option value="">Select Category...</option>
+                      <option value="technology">Technology & IT</option>
+                      <option value="automotive">Automotive</option>
+                      <option value="retail">Retail & Fashion</option>
+                      <option value="food">Food & Restaurant</option>
+                      <option value="services">Professional Services</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                    <input type="email" required name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label>
+                    <input required name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address & City</label>
+                    <div className="flex gap-4">
+                      <input required name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="w-1/3 bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" />
+                      <input required name="address" placeholder="Address" value={formData.address} onChange={handleInputChange} className="w-2/3 bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                    <textarea required name="description" rows="3" value={formData.description} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]"></textarea>
+                  </div>
+                  <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
+                    <Upload className="mx-auto text-gray-400 mb-2" />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Upload Shop Photo {editingId ? '(Optional)' : '(Required)'}</label>
+                    <input type="file" accept="image/*" name="shopPhoto" onChange={handleFileChange} required={!editingId} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-green-50 file:text-green-700" />
+                  </div>
+                  <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
+                    <CheckCircle2 className="mx-auto text-gray-400 mb-2" />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Upload Certificate (Optional)</label>
+                    <input type="file" accept="image/*,.pdf" name="certificate" onChange={handleFileChange} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-blue-50 file:text-blue-700" />
+                  </div>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-gray-100">
-                <button type="submit" disabled={isSubmitting} className="w-full bg-[#008751] text-white px-8 py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 hover:bg-[#006B40] transition-all shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed">
-                  {isSubmitting ? <><Loader2 className="animate-spin" size={24} /> Uploading & Saving...</> : 'Submit Business for Review'}
+                <button type="submit" disabled={isSubmitting} className="w-full bg-[#008751] text-white px-8 py-4 rounded-xl font-black text-lg hover:bg-[#006B40] shadow-xl disabled:bg-gray-400 transition-all flex items-center justify-center gap-3">
+                  {isSubmitting ? <><Loader2 className="animate-spin" size={24} /> Processing...</> : (editingId ? 'Update Listing' : 'Proceed to Secure Checkout')}
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* =========================================
+            TAB 4: SETTINGS
+        ============================================= */}
+        {activeTab === 'settings' && (
+          <div className="max-w-3xl mx-auto space-y-6 animate-[fadeInUp_0.5s_ease-out]">
+            <div className="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-3xl p-8 shadow-xl">
+              <h3 className="text-lg font-black text-gray-900 mb-6">Profile Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Owner Name</label>
+                  <input className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]" defaultValue={localStorage.getItem('username') || 'Business Owner'} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Primary Phone (Login ID)</label>
+                  <input className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-gray-500 cursor-not-allowed" readOnly value={localStorage.getItem('userPhone') || ''} />
+                </div>
+              </div>
+              <button className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors">
+                Save Profile Changes
+              </button>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden">
+              <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+              <Crown size={40} className="mb-4 text-purple-200 relative z-10" />
+              <h3 className="text-2xl font-black mb-2 relative z-10">Upgrade to Ultimate</h3>
+              <p className="text-purple-100 mb-6 max-w-md relative z-10">Get your business broadcasted to thousands of users on WhatsApp and secure a permanent spot on our homepage banner.</p>
+              <button 
+                onClick={() => { 
+                  if (myListings.length > 0) {
+                    triggerEdit(myListings[0]);
+                    setFormData(prev => ({ ...prev, plan: 'ultimate' }));
+                  } else {
+                    setActiveTab('add');
+                    setFormData(prev => ({ ...prev, plan: 'ultimate' }));
+                  }
+                }} 
+                className="bg-white text-purple-700 px-6 py-3 rounded-xl font-black text-sm hover:scale-105 transition-transform shadow-lg relative z-10"
+              >
+                Upgrade Package Now
+              </button>
+            </div>
           </div>
         )}
 
