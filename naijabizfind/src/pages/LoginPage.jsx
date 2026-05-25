@@ -29,7 +29,7 @@ export default function LoginPage() {
     const secretKey = e.target.adminKey.value;
     // TODO: Validate secretKey against your backend, store token
     console.log('Admin Key entered:', secretKey);
-    navigate('/admin/dashboard'); // Assuming you create an admin route later
+    navigate('/admin'); // Assuming you create an admin route later
   };
 
   return (
