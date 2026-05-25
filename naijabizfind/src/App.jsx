@@ -73,19 +73,19 @@ const useScrollReveal = () => {
 // --- COMPONENT: Business Card Skeleton Loader (Premium Shimmer) ---
 const BusinessCardSkeleton = () => (
   <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full animate-pulse shadow-sm">
-    <div className="bg-gradient-to-r from-gray-100 to-gray-200 h-40 sm:h-44 w-full" />
+    <div className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 h-40 sm:h-44 w-full bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]" />
     <div className="p-4 flex-1 flex flex-col space-y-3">
-      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
       <div className="flex items-center gap-1.5">
-        <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
-        <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="w-3.5 h-3.5 bg-gray-200 rounded-full animate-pulse" />
+        <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
       </div>
       <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
         <div className="flex items-center gap-1.5 w-1/3">
-          <div className="w-3.5 h-3.5 bg-gray-200 rounded-full" />
-          <div className="h-3 bg-gray-200 rounded w-1/2" />
+          <div className="w-3.5 h-3.5 bg-gray-200 rounded-full animate-pulse" />
+          <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
         </div>
-        <div className="h-3 bg-gray-200 rounded w-1/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/4 animate-pulse" />
       </div>
     </div>
   </div>
@@ -410,6 +410,168 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           </div>
         )}
       </section>
+    </div>
+  );
+};
+
+// --- VIEW: HIGHLY QUALITY DETAILED FILTERABLE DIRECTORY ---
+const DirectoryView = ({ onSelectBusiness, initialCategory }) => {
+  const [businesses, setBusinesses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [selectedCat, setSelectedCat] = useState(initialCategory || '');
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        let url = `${API_BASE}/businesses`;
+        if (selectedCat) url += `?category=${selectedCat}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setBusinesses(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, [selectedCat]);
+
+  const filtered = businesses.filter(b => {
+    const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase()) || b.description.toLowerCase().includes(search.toLowerCase());
+    const matchesCity = cityFilter === '' || b.city.toLowerCase().includes(cityFilter.toLowerCase());
+    return matchesSearch && matchesCity;
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-8 animate-in fade-in duration-500">
+      {/* Premium Filter Controls Grid */}
+      <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 shadow-sm">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input 
+            type="text" 
+            placeholder="Search keywords, design styles..." 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-[#008751] transition-all"
+          />
+        </div>
+        <div className="relative">
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-[#008751]" size={16} />
+          <input 
+            type="text" 
+            placeholder="Filter by city/region (e.g. Lagos)" 
+            value={cityFilter} 
+            onChange={(e) => setCityFilter(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-[#008751] transition-all"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select 
+            value={selectedCat} 
+            onChange={(e) => setSelectedCat(e.target.value)}
+            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm outline-none focus:border-[#008751] text-gray-700 transition-all"
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Interactive Category Chips layout */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <button onClick={() => setSelectedCat('')} className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border transition-all ${selectedCat === '' ? 'bg-[#008751] text-white border-[#008751]' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}>All</button>
+        {CATEGORIES.map(c => (
+          <button key={c.value} onClick={() => setSelectedCat(c.value)} className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl border flex items-center gap-1.5 transition-all ${selectedCat === c.value ? 'bg-[#008751] text-white border-[#008751]' : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}>
+            {c.icon} {c.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid Display Node */}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <BusinessCardSkeleton key={i} />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed text-gray-400 font-bold">No active listings found matching these specifications.</div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 animate-in fade-in duration-300">
+          {filtered.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- VIEW: HIGH FIDELITY SPECIFICATION DETAIL VIEW ---
+const DetailView = ({ business, onBack }) => {
+  const tiltRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const card = tiltRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y / rect.height) - 0.5) * -12;
+    const rotateY = ((x / rect.width) - 0.5) * 12;
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-6 animate-in zoom-in-95 duration-300">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors">
+        <ArrowLeft size={16} /> Back to Listings
+      </button>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div 
+          ref={tiltRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="md:col-span-5 bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-xl will-change-transform transition-transform duration-200 ease-out"
+        >
+          <img src={getShopPhoto(business)} alt={business.name} className="w-full object-cover aspect-[4/5]" />
+        </div>
+
+        <div className="md:col-span-7 space-y-6">
+          <div className="space-y-2">
+            <span className="px-3 py-1 bg-emerald-50 text-[#008751] font-black text-[10px] uppercase rounded-full tracking-wider">{business.category}</span>
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">{business.name}</h1>
+            <p className="text-gray-400 font-bold flex items-center gap-1 text-sm"><MapPin size={14} className="text-[#008751]" /> {business.address}, {business.city}</p>
+          </div>
+
+          <div className="p-5 bg-gray-50 border rounded-2xl space-y-3 font-semibold text-xs text-gray-500">
+            <div className="flex justify-between items-center pb-2.5 border-b"><span>Weekly Hours</span><span className="font-bold text-gray-900 flex items-center gap-1"><Clock size={12} /> {getHours(business)}</span></div>
+            <div className="flex justify-between items-center pb-2.5 border-b"><span>Operational Verification</span><span className="text-[#008751] font-black flex items-center gap-0.5"><VerifiedIcon size={12} /> Verified Placement</span></div>
+            <div className="flex justify-between items-center"><span>Customer Trust Score</span><span className="font-bold text-gray-900 flex items-center gap-0.5"><Star size={12} fill={COLORS.accent} stroke={COLORS.accent} /> {business.rating || '5.0'} / 5.0</span></div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">About Our Services</h4>
+            <p className="text-sm font-medium text-gray-600 leading-relaxed">{business.description}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <a href={`tel:${business.phone}`} className="p-4 bg-gray-900 text-white font-black text-xs text-center uppercase tracking-wider rounded-xl shadow hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+              <Phone size={14} /> Call Store Line
+            </a>
+            <a href={`https://wa.me/${business.whatsapp?.replace(/[^0-9]/g, '') || business.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-4 bg-[#25D366] text-white font-black text-xs text-center uppercase tracking-wider rounded-xl shadow-lg shadow-[#25D366]/20 hover:bg-[#20ba59] transition-all flex items-center justify-center gap-2">
+              <MessageCircle size={14} /> Open WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -972,7 +1134,7 @@ const AdminView = ({ onNavigate }) => {
             <button onClick={() => setCurrentTab('overview')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Overview</button>
             <button onClick={() => setCurrentTab('submissions')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all relative ${currentTab === 'submissions' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
               Pending Reviews
-              {pendingApprovals > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-bounce">{pendingApprovals}</span>}
+              {pendingApprovals > 0 && <span className="absolute -top-1.5 -right-1.5 bg-red-50 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-bounce">{pendingApprovals}</span>}
             </button>
             <button onClick={() => setCurrentTab('all')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>All Users</button>
             <button onClick={() => setCurrentTab('transactions')} className={`px-3.5 py-2 rounded-lg font-black uppercase tracking-wider transition-all ${currentTab === 'transactions' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Ledger</button>
@@ -1098,7 +1260,7 @@ const AdminView = ({ onNavigate }) => {
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-black text-gray-900 text-base md:text-lg truncate">{biz.name}</h3>
-                        <span className={`text-[10px] font-black uppercase tracking-wider tracking-widest px-2 py-0.5 rounded ${biz.plan === 'featured' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-600 border'}`}>{biz.plan}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${biz.plan === 'featured' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-600 border'}`}>{biz.plan}</span>
                       </div>
                       <p className="text-xs text-gray-500 font-semibold leading-relaxed max-w-xl">{biz.description}</p>
                       <p className="text-[11px] font-bold text-gray-400 flex items-center gap-1.5"><MapPin size={12} className="text-[#008751]" /> {biz.address}, {biz.city} • <Phone size={12} className="text-[#008751]" /> {biz.phone}</p>
@@ -1355,7 +1517,7 @@ const AdminLoginView = ({ onAdminLoginSuccess }) => {
       return;
     }
 
-    setLoading(true);
+    loading(true);
     setAlert(null);
 
     try {
@@ -1651,14 +1813,11 @@ const SubmitView = () => {
   );
 };
 
-// --- Dummy components to prevent rendering context faults ---
-const DirectoryView = ({ onSelectBusiness }) => <div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold">Directory Content Workspace Panel</div>;
-const DetailView = ({ business, onBack }) => <div className="max-w-4xl mx-auto px-4 py-10 text-center font-bold">Business Detailed Specifications Node</div>;
-
-// --- MAIN APP ---
+// --- MAIN APP COMPONENT ---
 export default function App() {
   const [page, setPage] = useState(() => {
-    if (window.location.pathname === STEALTH_ADMIN_PATH) {
+    // Dynamic Path Verification & Matching on Initialization
+    if (window.location.pathname === STEALTH_ADMIN_PATH || window.location.pathname === '/admin/dashboard') {
       return 'admin-login';
     }
     if (window.location.pathname === '/payment-success' ||
@@ -1673,6 +1832,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [directoryOptions, setDirectoryOptions] = useState({});
 
+  // Session Data Hooks
   const [currentOwnerProfile, setCurrentOwnerProfile] = useState(() => {
     const cached = sessionStorage.getItem('naija_owner_session');
     return cached ? JSON.parse(cached) : null;
@@ -1851,6 +2011,14 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Core Platform Style Injectors */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes shimmer {
+          0% { bg-position: -200% 0; }
+          100% { bg-position: 200% 0; }
+        }
+      `}} />
     </div>
   );
 }
