@@ -6,8 +6,13 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [role, setRole] = useState('user'); // 'user' or 'owner'
+  
+  // Controlled inputs for data retention simulation
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  // Read URL params to pre-select role if they clicked a specific button on landing page
+  // Sync role parameters parsing from landing page hero buttons
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roleParam = params.get('role');
@@ -16,9 +21,14 @@ export default function SignupPage() {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    // TODO: Wire up actual backend API call here
-    // For now, simulate success and redirect based on role
+
+    // Cache registration details locally to pass into user sessions 
+    localStorage.setItem('userRole', role);
+    localStorage.setItem('username', username || 'Nii Kpakpo');
+    
     if (role === 'owner') {
+      // Provide a mock telephone for owner registration matching dashboard state tracking
+      localStorage.setItem('userPhone', '+2348031234567');
       navigate('/dashboard');
     } else {
       navigate('/explore');
@@ -34,7 +44,7 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-5">
-          {/* Role Selector */}
+          {/* Role Toggle Grid */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
@@ -60,15 +70,36 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Username</label>
-            <input type="text" required className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" placeholder="niikpakpo" />
+            <input 
+              type="text" 
+              required 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
+              placeholder="niikpakpo" 
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Email (Gmail)</label>
-            <input type="email" required className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" placeholder="user@gmail.com" />
+            <input 
+              type="email" 
+              required 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
+              placeholder="user@gmail.com" 
+            />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
-            <input type="password" required className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" placeholder="••••••••" />
+            <input 
+              type="password" 
+              required 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
+              placeholder="••••••••" 
+            />
           </div>
 
           <button type="submit" className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-colors mt-4">
