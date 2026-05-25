@@ -81,8 +81,9 @@ export default function OwnerDashboard() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Navigation State
+  // Navigation & Tab Switcher Loader States
   const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add, settings
+  const [isTogglingTab, setIsTogglingTab] = useState(false);
   
   // Data State
   const [myListings, setMyListings] = useState([]);
@@ -102,11 +103,12 @@ export default function OwnerDashboard() {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Simulate initial smooth load & fetch user data
-    setTimeout(() => {
-      fetchUserListings();
+    // Smooth initial boot sequence
+    const initFetch = async () => {
+      await fetchUserListings();
       setIsPageLoading(false);
-    }, 1200);
+    };
+    initFetch();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -114,7 +116,6 @@ export default function OwnerDashboard() {
   const fetchUserListings = async () => {
     setIsFetchingListings(true);
     try {
-      // Fetching based on the owner's phone number saved in localStorage during login
       const ownerPhone = localStorage.getItem('userPhone') || '';
       if (!ownerPhone) return;
 
@@ -125,15 +126,26 @@ export default function OwnerDashboard() {
       });
       const data = await res.json();
       
-      // Backend returns a single object if found, let's wrap it in array for UI
-      if (res.ok && data._id) {
-        setMyListings([data]); 
+      if (res.ok && data) {
+        // Ensure data maps cleanly to an iterable structure for rendering
+        setMyListings(Array.isArray(data) ? data : data._id ? [data] : []); 
       }
     } catch (err) {
       console.error("Failed to fetch listings:", err);
     } finally {
       setIsFetchingListings(false);
     }
+  };
+
+  // Switch tabs smoothly with structured animation transitions
+  const handleTabToggle = (targetTab) => {
+    setIsTogglingTab(true);
+    setIsMobileMenuOpen(false);
+    setTimeout(() => {
+      setActiveTab(targetTab);
+      window.scrollTo(0, 0);
+      setIsTogglingTab(false);
+    }, 350);
   };
 
   const handleInputChange = (e) => {
@@ -154,7 +166,7 @@ export default function OwnerDashboard() {
       plan: business.plan || 'basic'
     });
     setEditingId(business._id);
-    setActiveTab('add');
+    handleTabToggle('add');
   };
 
   // --- SUBMIT / UPDATE REGISTRATION PIPELINE ---
@@ -200,8 +212,8 @@ export default function OwnerDashboard() {
         data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Update failed');
         alert('Listing updated successfully!');
-        fetchUserListings(); // Refresh data
-        setActiveTab('listings');
+        await fetchUserListings(); 
+        handleTabToggle('listings');
       } else {
         // REGISTER NEW
         res = await fetch(`${API_BASE}/businesses/register`, {
@@ -212,12 +224,11 @@ export default function OwnerDashboard() {
         data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Registration failed');
         
-        // IMMEDIATE PAYMENT TRIGGER
         alert('Saved successfully! Redirecting to secure payment...');
         handlePayment(data); 
       }
 
-      // Success! Reset form
+      // Clean form parameters
       setEditingId(null);
       setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' });
       setFiles({ shopPhoto: null, certificate: null });
@@ -240,7 +251,7 @@ export default function OwnerDashboard() {
       const data = await res.json();
       
       if (data.authorization_url) {
-        window.location.href = data.authorization_url; // Redirects to Paystack Secure Checkout
+        window.location.href = data.authorization_url; 
       } else {
         alert('Payment initialization failed.');
       }
@@ -255,9 +266,10 @@ export default function OwnerDashboard() {
     navigate('/login');
   };
 
-  // ----------------------------------------------------
-  // FULL PAGE LOADING SCREEN
-  // ----------------------------------------------------
+  // Compute live contextual views strictly derived from state payloads
+  const totalViewsCalculated = myListings.reduce((acc, curr) => acc + (curr.views || 0), 0);
+  const performanceRating = myListings.reduce((acc, curr) => acc + (curr.rating || 5.0), 0) / (myListings.length || 1);
+
   if (isPageLoading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center font-sans">
@@ -275,6 +287,14 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-[#f8fafc] flex relative overflow-hidden font-sans">
       
+      {/* --- TAB SWITCH OVERLAY LOADER --- */}
+      {isTogglingTab && (
+        <div className="fixed inset-0 bg-white/70 backdrop-blur-md z-[9999] flex flex-col items-center justify-center animate-in fade-in duration-200">
+          <Loader2 size={36} className="text-[#008751] animate-spin mb-2" />
+          <p className="text-xs font-black tracking-widest text-gray-400 uppercase">Shuffling Workspaces</p>
+        </div>
+      )}
+
       {/* --- Parallax Background Elements --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute w-[500px] h-[500px] bg-green-300/20 rounded-full blur-[100px] -top-40 -left-20 transition-transform duration-300 ease-out" style={{ transform: `translateY(${scrollY * 0.3}px)` }} />
@@ -304,16 +324,16 @@ export default function OwnerDashboard() {
         </div>
         
         <nav className="flex-1 p-4 space-y-2 mt-4">
-          <button onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'overview' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => handleTabToggle('overview')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'overview' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <LayoutDashboard size={18} /> Dashboard
           </button>
-          <button onClick={() => { setActiveTab('listings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'listings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => handleTabToggle('listings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'listings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <Store size={18} /> My Listings
           </button>
-          <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); setActiveTab('add'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <PlusCircle size={18} /> Add New Listing
           </button>
-          <button onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'settings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => handleTabToggle('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'settings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <Settings size={18} /> Settings
           </button>
         </nav>
@@ -349,7 +369,7 @@ export default function OwnerDashboard() {
           </div>
           
           {activeTab !== 'add' && (
-            <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); setActiveTab('add'); }} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
+            <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
               <div className="absolute inset-0 w-full h-full bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
               <PlusCircle size={18} className="relative z-10 hidden md:block" />
               <span className="relative z-10">Add Listing</span>
@@ -362,11 +382,11 @@ export default function OwnerDashboard() {
         ============================================= */}
         {activeTab === 'overview' && (
           <div className="animate-[fadeInUp_0.5s_ease-out]">
-            {/* 3D Stats Grid */}
+            {/* Live Synchronized Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <TiltCard title="Total Views" value="2,405" icon={TrendingUp} delay="0s" />
+              <TiltCard title="Total Views" value={totalViewsCalculated} icon={TrendingUp} delay="0s" />
               <TiltCard title="Active Listings" value={myListings.length} icon={Store} delay="0.1s" />
-              <TiltCard title="Customer Rating" value="4.8" icon={Star} delay="0.2s" />
+              <TiltCard title="Customer Rating" value={performanceRating.toFixed(1)} icon={Star} delay="0.2s" />
             </div>
 
             {myListings.length === 0 ? (
@@ -379,7 +399,7 @@ export default function OwnerDashboard() {
                 </div>
                 <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">Ready to expand your reach?</h3>
                 <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing organic traffic from users across NaijaBizFind.</p>
-                <button onClick={() => { setEditingId(null); setActiveTab('add'); }} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
+                <button onClick={() => { setEditingId(null); handleTabToggle('add'); }} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
                   <PlusCircle size={20} /> Register Business
                 </button>
               </div>
@@ -419,7 +439,7 @@ export default function OwnerDashboard() {
                 {myListings.map(biz => (
                   <div key={biz._id} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-100 shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
                     <div className="h-40 overflow-hidden bg-gray-100 relative">
-                      <img src={biz.images?.shopPhoto || 'https://via.placeholder.com/400'} alt="Shop" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+                      <img src={biz.images?.shopPhoto || biz.shopPhoto || 'https://via.placeholder.com/400'} alt="Shop" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
                       {!biz.isPaid && (
                         <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wide flex items-center gap-1 shadow-lg">
                           <AlertCircle size={12} /> Payment Required
@@ -595,7 +615,7 @@ export default function OwnerDashboard() {
                     triggerEdit(myListings[0]);
                     setFormData(prev => ({ ...prev, plan: 'ultimate' }));
                   } else {
-                    setActiveTab('add');
+                    handleTabToggle('add');
                     setFormData(prev => ({ ...prev, plan: 'ultimate' }));
                   }
                 }} 
