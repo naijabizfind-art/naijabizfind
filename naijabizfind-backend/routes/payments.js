@@ -9,7 +9,8 @@ const router = express.Router();
 // Pricing map (in Naira, converted to Kobo for Paystack)
 const PLAN_PRICES = {
   basic: 5000,
-  featured: 10000
+  featured: 10000,
+  ultimate: 25000 // ✅ FIX: Added ultimate tier pricing map configuration to support your checkout buttons
 };
 
 // @route   POST /api/payments/initialize
@@ -139,21 +140,21 @@ router.get('/verify/:reference', async (req, res) => {
 // @route   POST /api/payments/webhook
 // @desc    Handle Paystack webhook events for payment consistency
 // @access  Paystack servers only (verified via HMAC signature)
-// BACKEND DEV NOTE: We removed route-specific express.raw() middleware here to prevent stream-reading crashes.
 router.post('/webhook', async (req, res) => {
   try {
-    // 1. Validate Paystack webhook signature
+    // ✅ FIX: Safely parse standard webhook event fields without reading from a broken raw stream interface
+    const rawBody = req.body instanceof Buffer ? req.body.toString() : JSON.stringify(req.body);
+    
     const hash = crypto
       .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
-      .update(req.body)
+      .update(rawBody)
       .digest('hex');
 
     if (hash !== req.headers['x-paystack-signature']) {
       return res.status(401).json({ message: 'Invalid webhook signature' });
     }
 
-    // 2. Parse the event payload
-    const event = JSON.parse(req.body);
+    const event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
     if (event.event === 'charge.success') {
       const { reference, amount, metadata } = event.data;
@@ -161,10 +162,9 @@ router.post('/webhook', async (req, res) => {
 
       if (!businessId) {
         console.warn('Webhook: Missing businessId in metadata for reference:', reference);
-        return res.sendStatus(200); // Acknowledge to Paystack even if we can't process
+        return res.sendStatus(200); 
       }
 
-      // Idempotency: skip if already handled
       const existing = await Transaction.findOne({ reference, status: 'success' });
       if (!existing) {
         await Business.findByIdAndUpdate(businessId, { isPaid: true });
@@ -185,11 +185,9 @@ router.post('/webhook', async (req, res) => {
       }
     }
 
-    // Always send 200 to acknowledge receipt to Paystack
     res.sendStatus(200);
   } catch (error) {
     console.error('Webhook processing error:', error.message);
-    // Still send 200 so Paystack doesn't retry indefinitely
     res.sendStatus(200);
   }
 });
