@@ -32,10 +32,10 @@ const COLORS = {
 
 const CATEGORIES = [
   { name: "Fashion", value: "fashion", icon: <ShoppingBag size={18} /> },
-  { name: "Food", value: "food", icon: <Coffee size={18} /> },
-  { name: "Services", value: "services", icon: <Settings size={18} /> },
-  { name: "Beauty", value: "beauty", icon: <Scissors size={18} /> },
-  { name: "Tech", value: "tech", icon: <Globe size={18} /> }
+  { name: "Food & Restaurant", value: "food", icon: <Coffee size={18} /> },
+  { name: "Professional Services", value: "services", icon: <Settings size={18} /> },
+  { name: "Beauty & Salons", value: "beauty", icon: <Scissors size={18} /> },
+  { name: "Tech & Repair", value: "tech", icon: <Globe size={18} /> }
 ];
 
 // --- HELPERS ---
@@ -119,7 +119,7 @@ const BusinessCard = ({ biz, onClick }) => {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ transition: 'transform 0.15s ease-out, border-color 0.3s ease, box-shadow 0.3s ease' }}
-      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-emerald-200 hover:shadow-2xl cursor-pointer flex flex-col h-full定位 relative will-change-transform shadow-sm"
+      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-emerald-200 hover:shadow-2xl cursor-pointer flex flex-col h-full relative will-change-transform shadow-sm"
     >
       <div className="relative h-40 sm:h-44 overflow-hidden">
         <img src={getShopPhoto(biz)} alt={biz.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
@@ -170,153 +170,22 @@ const Alert = ({ type, message }) => {
   );
 };
 
-// --- VIEW: BEAUTIFUL LANDING PAGE ---
-const LandingView = ({ onNavigate }) => {
-  const heroRef = useScrollReveal();
-  const stepRef = useScrollReveal();
-  const statRef = useScrollReveal();
-
-  const [stats, setStats] = useState({ vendors: 0, cities: 0, verified: 100 });
-  const [loadingStats, setLoadingStats] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/businesses`);
-        if (res.ok) {
-          const data = await res.json();
-          const uniqueCities = new Set(data.map(b => b.city?.trim().toLowerCase()).filter(Boolean));
-          setStats({
-            vendors: data.length,
-            cities: uniqueCities.size,
-            verified: 100
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load real stats from MongoDB:", err);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  return (
-    <div className="space-y-16 pb-20 overflow-hidden">
-      {/* Dynamic Hero Grid - Exact Matching Documentation Page 3 */}
-      <section ref={heroRef} className="relative bg-[#008751] text-white py-20 lg:py-32 px-4 md:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-600/30 via-slate-950/20 to-[#008751] pointer-events-none" />
-        <div className="absolute top-10 right-20 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
-        
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-black tracking-wide uppercase">
-              <Zap size={14} className="animate-bounce" /> Verified Local Service Hub
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-none tracking-tight">
-              Find Local Shops, Tailors, <br/>
-              <span className="text-yellow-300">Salons & More Near You</span>
-            </h1>
-            
-            {/* Embedded Inline Search Box */}
-            <div className="max-w-xl bg-white p-2 rounded-2xl shadow-2xl flex items-center border border-gray-100 gap-2 mt-4 transform hover:scale-[1.01] transition-transform">
-              <Search className="text-gray-400 ml-3 flex-shrink-0" size={20} />
-              <input 
-                type="text" 
-                onClick={() => onNavigate('home')}
-                placeholder="Search businesses in Lagos, Abuja..." 
-                className="w-full p-2 outline-none text-gray-900 font-bold text-sm bg-transparent"
-              />
-              <button onClick={() => onNavigate('home')} className="bg-[#008751] hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition-colors">
-                Find
-              </button>
-            </div>
-          </div>
-          
-          <div className="lg:col-span-5 relative">
-            <div className="bg-white text-gray-900 border border-gray-100 p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
-              <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl" />
-              <h3 className="text-base font-black mb-4 uppercase tracking-wider text-gray-400">Categories</h3>
-              <div className="space-y-4 text-xs font-semibold text-gray-500">
-                {CATEGORIES.map((cat, idx) => (
-                  <div key={idx} onClick={() => onNavigate('home', { category: cat.value })} className="flex items-center justify-between p-3.5 bg-gray-50 hover:bg-green-50 hover:border-emerald-200 border border-gray-100 rounded-xl cursor-pointer transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="text-[#008751]">{cat.icon}</div>
-                      <p className="text-gray-900 font-black">{cat.name}</p>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Statistics Board */}
-      <section ref={statRef} className="max-w-7xl mx-auto px-4 md:px-6 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
-        <div className="bg-gradient-to-r from-emerald-600 to-[#008751] rounded-3xl p-8 md:p-12 text-white shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-emerald-400/30">
-            <div className="space-y-1 pt-4 md:pt-0">
-              <h3 className="text-4xl md:text-5xl font-black">
-                {loadingStats ? <Loader2 className="animate-spin inline-block" size={32} /> : `${stats.vendors}`}
-              </h3>
-              <p className="text-xs md:text-sm font-extrabold uppercase tracking-widest text-emerald-100">Registered Live Vendors</p>
-            </div>
-            <div className="space-y-1 pt-6 md:pt-0">
-              <h3 className="text-4xl md:text-5xl font-black">
-                {loadingStats ? <Loader2 className="animate-spin inline-block" size={32} /> : `${stats.cities}`}
-              </h3>
-              <p className="text-xs md:text-sm font-extrabold uppercase tracking-widest text-emerald-100">Nigerian Cities Covered</p>
-            </div>
-            <div className="space-y-1 pt-6 md:pt-0">
-              <h3 className="text-4xl md:text-5xl font-black">{stats.verified}%</h3>
-              <p className="text-xs md:text-sm font-extrabold uppercase tracking-widest text-emerald-100">CAC Profile Verification</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Segment */}
-      <section ref={stepRef} className="max-w-7xl mx-auto px-4 md:px-6 py-6 transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
-        <div className="text-center space-y-3 mb-12">
-          <h2 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Simple. Transparent. Reliable.</h2>
-          <p className="text-xs md:text-sm text-[#008751] font-black uppercase tracking-widest">How to use the directory platform</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="p-8 bg-white border border-gray-100 rounded-3xl text-center space-y-4 hover:shadow-xl transition-shadow">
-            <div className="w-12 h-12 bg-emerald-50 text-[#008751] rounded-2xl flex items-center justify-center font-black mx-auto">1</div>
-            <h3 className="font-extrabold text-gray-900">Choose a Category</h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed">Select from fashion designers, culinary caterers, salons, mechanical workshops, and tech assistance hubs near you.</p>
-          </div>
-          <div className="p-8 bg-white border border-gray-100 rounded-3xl text-center space-y-4 hover:shadow-xl transition-shadow">
-            <div className="w-12 h-12 bg-emerald-50 text-[#008751] rounded-2xl flex items-center justify-center font-black mx-auto">2</div>
-            <h3 className="font-extrabold text-gray-900">Verify Credentials</h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed">Inspect profile cover photos, working hours, exact locations, and registered CAC trade certificates.</p>
-          </div>
-          <div className="p-8 bg-white border border-gray-100 rounded-3xl text-center space-y-4 hover:shadow-xl transition-shadow">
-            <div className="w-12 h-12 bg-emerald-50 text-[#008751] rounded-2xl flex items-center justify-center font-black mx-auto">3</div>
-            <h3 className="font-extrabold text-gray-900">Direct Contact</h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed">Initiate a secure telephone line or instant WhatsApp chat directly with the professional without paying a middleman.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-};
-
-// --- VIEW: REGISTRATION FLOW & DIRECTORY HOME (Exact matching Page 4 layout filters) ---
+// --- VIEW: REGISTRATION FLOW & DIRECTORY HOMEPAGE (Page 3 & 4 Layout Blueprints) ---
 const HomeView = ({ onNavigate, onSelectBusiness, initialCategory }) => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Filtering States matches Documentation layout side view
+  // Filtering States mapped side-by-side as shown in documentation layout blueprints
   const [search, setSearch] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [selectedCat, setSelectedCat] = useState(initialCategory || '');
 
+  const heroRef = useScrollReveal();
+  const mainGridRef = useScrollReveal();
+
   useEffect(() => {
     const fetchListings = async () => {
+      setLoading(true);
       try {
         let url = `${API_BASE}/businesses`;
         if (selectedCat) url += `?category=${selectedCat}`;
@@ -341,80 +210,95 @@ const HomeView = ({ onNavigate, onSelectBusiness, initialCategory }) => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-10 overflow-hidden">
-      
-      {/* Core Layout Wrapper containing Left Side Filtering and Main Product Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="space-y-10 pb-20">
+      {/* Search Header Banner - Exact Matching Documentation Page 3 Layout */}
+      <section ref={heroRef} className="relative bg-[#008751] text-white py-16 lg:py-24 px-4 md:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-600/30 via-slate-950/20 to-[#008751] pointer-events-none" />
+        <div className="max-w-7xl mx-auto space-y-6 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-black tracking-wide uppercase">
+            <Zap size={14} className="animate-bounce" /> Verified Local Service Hub
+          </div>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-none tracking-tight">
+            Find Verified Local Shops & <br/>
+            <span className="text-yellow-300">Service Professionals Near You</span>
+          </h1>
+          <p className="text-emerald-50 text-sm md:text-base max-w-xl mx-auto font-medium leading-relaxed">
+            Skip the stress of searching. Instantly look up vetted tailors, mechanics, salons, and technicians in your immediate neighborhood.
+          </p>
+
+          {/* Embedded Inline Search Box */}
+          <div className="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-2xl flex items-center border border-gray-100 gap-2 transform hover:scale-[1.01] transition-transform">
+            <Search className="text-gray-400 ml-3 flex-shrink-0" size={20} />
+            <input 
+              type="text" 
+              placeholder="What are you looking for? (e.g. boutique, mechanic, tailor...)" 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full p-2 outline-none text-gray-900 font-bold text-sm bg-transparent"
+            />
+            <button className="bg-gray-900 hover:bg-gray-800 text-white font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-colors">
+              Search
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Core Content: Side-By-Side Filtering Panel Blueprint from Page 4 */}
+      <div ref={mainGridRef} className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start transform opacity-0 translate-y-12 transition-all duration-700 ease-out">
         
-        {/* =========================================
-            LEFT BAR SIDEBAR FILTERS (Page 4 Blueprint)
-        ============================================= */}
-        <aside className="lg:col-span-3 bg-white p-6 rounded-3xl border border-gray-100 space-y-6 shadow-sm sticky top-24">
+        {/* LEFT BAR SIDEBAR FILTERS PANEL */}
+        <aside className="lg:col-span-3 bg-white p-6 rounded-3xl border border-gray-100 space-y-6 shadow-sm sticky top-24 z-10">
           <div className="flex items-center justify-between border-b pb-3 border-gray-100">
-            <h3 className="text-base font-black tracking-tight flex items-center gap-1.5"><Filter size={16} className="text-[#008751]" /> Filter Businesses</h3>
+            <h3 className="text-base font-black tracking-tight flex items-center gap-1.5"><Filter size={16} className="text-[#008751]" /> Filter Listings</h3>
             <button onClick={() => { setSearch(''); setCityFilter(''); setSelectedCat(''); }} className="text-xs font-black text-gray-400 hover:text-red-500 transition-colors">Clear All</button>
           </div>
 
-          {/* Keyword Field */}
+          {/* Location filtering facet */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Search Keywords</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-              <input 
-                type="text" 
-                placeholder="Search businesses..." 
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-[#008751] focus:bg-white transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Category Facets */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Category</label>
-            <div className="space-y-1">
-              <div 
-                onClick={() => setSelectedCat('')}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${selectedCat === '' ? 'bg-green-50 text-[#008751]' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                <span>All Categories</span>
-              </div>
-              {CATEGORIES.map((c, i) => (
-                <div 
-                  key={i}
-                  onClick={() => setSelectedCat(c.value)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${selectedCat === c.value ? 'bg-green-50 text-[#008751]' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  <span className="capitalize">{c.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Target Region Location Filter */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">City / State</label>
+            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Target City / State</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008751]" size={14} />
               <input 
                 type="text" 
-                placeholder="Filter by City..." 
+                placeholder="Filter by City (e.g. Lagos)..." 
                 value={cityFilter}
                 onChange={e => setCityFilter(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-[#008751] focus:bg-white transition-colors"
               />
             </div>
           </div>
+
+          {/* Category facets selection nodes */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Category Placements</label>
+            <div className="space-y-1">
+              <div 
+                onClick={() => setSelectedCat('')}
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${selectedCat === '' ? 'bg-green-50 text-[#008751]' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                <span>All Framework Categories</span>
+              </div>
+              {CATEGORIES.map((c, i) => (
+                <div 
+                  key={i}
+                  onClick={() => setSelectedCat(c.value)}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${selectedCat === c.value ? 'bg-green-50 text-[#008751]' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="opacity-70">{c.icon}</span>
+                    <span>{c.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </aside>
 
-        {/* =========================================
-            MAIN COLUMN LISTINGS DATA GRID
-        ============================================= */}
+        {/* MAIN COLUMN LISTINGS DATA GRID FRAME */}
         <section className="lg:col-span-9 space-y-6">
           <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
             <p className="text-xs font-black text-gray-500 uppercase tracking-wider">
-              Showing {filtered.length} live matching operations nodes
+              Discovered {filtered.length} live matching businesses
             </p>
           </div>
 
@@ -424,10 +308,10 @@ const HomeView = ({ onNavigate, onSelectBusiness, initialCategory }) => {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed text-gray-400 font-bold">
-              No active paid & approved listings match your filter selections.
+              No active paid & approved listings match your selection criteria.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in duration-500">
               {filtered.map(biz => (
                 <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />
               ))}
@@ -435,6 +319,73 @@ const HomeView = ({ onNavigate, onSelectBusiness, initialCategory }) => {
           )}
         </section>
 
+      </div>
+    </div>
+  );
+};
+
+// --- VIEW: HIGH FIDELITY SPECIFICATION DETAIL VIEW ---
+const DetailView = ({ business, onBack }) => {
+  const tiltRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const card = tiltRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotateX = ((y / rect.height) - 0.5) * -12;
+    const rotateY = ((x / rect.width) - 0.5) * 12;
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-6 animate-in zoom-in-95 duration-300">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors">
+        <ArrowLeft size={16} /> Back to Directory
+      </button>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div 
+          ref={tiltRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="md:col-span-5 bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-xl will-change-transform transition-transform duration-200 ease-out"
+        >
+          <img src={getShopPhoto(business)} alt={business.name} className="w-full object-cover aspect-[4/5]" />
+        </div>
+
+        <div className="md:col-span-7 space-y-6">
+          <div className="space-y-2">
+            <span className="px-3 py-1 bg-emerald-50 text-[#008751] font-black text-[10px] uppercase rounded-full tracking-wider">{business.category}</span>
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">{business.name}</h1>
+            <p className="text-gray-400 font-bold flex items-center gap-1 text-sm"><MapPin size={14} className="text-[#008751]" /> {business.address}, {business.city}</p>
+          </div>
+
+          <div className="p-5 bg-gray-50 border rounded-2xl space-y-3 font-semibold text-xs text-gray-500">
+            <div className="flex justify-between items-center pb-2.5 border-b"><span>Weekly Hours</span><span className="font-bold text-gray-900 flex items-center gap-1"><Clock size={12} /> {getHours(business)}</span></div>
+            <div className="flex justify-between items-center pb-2.5 border-b"><span>Operational Verification</span><span className="text-[#008751] font-black flex items-center gap-0.5"><VerifiedIcon size={12} /> Verified Placement</span></div>
+            <div className="flex justify-between items-center"><span>Customer Trust Score</span><span className="font-bold text-gray-900 flex items-center gap-0.5"><Star size={12} fill={COLORS.accent} stroke={COLORS.accent} /> {business.rating || '5.0'} / 5.0</span></div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">About Our Services</h4>
+            <p className="text-sm font-medium text-gray-600 leading-relaxed">{business.description}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <a href={`tel:${business.phone}`} className="p-4 bg-gray-900 text-white font-black text-xs text-center uppercase tracking-wider rounded-xl shadow hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+              <Phone size={14} /> Call Store Line
+            </a>
+            <a href={`https://wa.me/${business.whatsapp?.replace(/[^0-9]/g, '') || business.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-4 bg-[#25D366] text-white font-black text-xs text-center uppercase tracking-wider rounded-xl shadow-lg shadow-[#25D366]/20 hover:bg-[#20ba59] transition-all flex items-center justify-center gap-2">
+              <MessageCircle size={14} /> Open WhatsApp
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -890,8 +841,9 @@ const AdminView = ({ onNavigate }) => {
     } catch (err) {
       setAlert({ type: 'error', message: err.message });
       setIsAuthenticated(false);
-    } fillAll:
-    setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = (e) => {
@@ -905,7 +857,7 @@ const AdminView = ({ onNavigate }) => {
     setIsAuthenticated(false);
     setBusinesses([]);
     setTransactions([]);
-    onNavigate('landing');
+    onNavigate('home');
   };
 
   useEffect(() => {
@@ -1351,7 +1303,7 @@ const PaymentSuccessView = ({ onNavigate }) => {
           <CheckCircle size={64} className="text-[#008751] mx-auto mb-4 animate-bounce" />
           <h2 className="text-2xl font-black text-gray-900 mb-2">Payment Successful!</h2>
           <p className="text-gray-500 text-sm font-semibold mb-8">Your business has been submitted for admin review. You'll be visible once approved.</p>
-          <button onClick={() => onNavigate('landing')} className="bg-[#008751] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-emerald-800 transition-all">Back to Home</button>
+          <button onClick={() => onNavigate('home')} className="bg-[#008751] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-emerald-800 transition-all">Back to Home</button>
         </>
       )}
       {status === 'error' && (
@@ -1359,16 +1311,17 @@ const PaymentSuccessView = ({ onNavigate }) => {
           <AlertCircle size={64} className="text-red-400 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-gray-900 mb-2">Verification Failed</h2>
           <p className="text-gray-500 text-sm font-semibold mb-8">We couldn't verify your payment. Please contact support with your payment reference.</p>
-          <button onClick={() => onNavigate('landing')} className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all">Back to Home</button>
+          <button onClick={() => onNavigate('home')} className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all">Back to Home</button>
         </>
       )}
     </div>
   );
 };
 
-// --- MAIN APP ENTRY ---
+// --- MAIN APP WORKSPACE HUB ---
 export default function App() {
   const [page, setPage] = useState(() => {
+    // Dynamic Path Verification & Matching on Initialization
     if (window.location.pathname === STEALTH_ADMIN_PATH || window.location.pathname === '/admin/dashboard') {
       return 'admin-login';
     }
@@ -1377,13 +1330,14 @@ export default function App() {
         window.location.search.includes('trxref')) {
       return 'payment-success';
     }
-    return 'landing'; 
+    return 'home'; // Clean Boot Sequence straight onto your layout data filters grid!
   });
 
   const [selectedBiz, setSelectedBiz] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [directoryOptions, setDirectoryOptions] = useState({});
 
+  // Session State Hooks
   const [currentOwnerProfile, setCurrentOwnerProfile] = useState(() => {
     const cached = sessionStorage.getItem('naija_owner_session');
     return cached ? JSON.parse(cached) : null;
@@ -1412,7 +1366,7 @@ export default function App() {
     if (profile.role === 'owner') {
       sessionStorage.setItem('naija_owner_session', JSON.stringify(profile));
       setCurrentOwnerProfile(profile);
-      window.location.href = '/dashboard'; // Navigates seamlessly to standalone OwnerDashboard
+      window.location.href = '/dashboard'; 
     } else {
       sessionStorage.setItem('naija_shopper_session', JSON.stringify(profile));
       setCurrentShopper(profile);
@@ -1425,7 +1379,7 @@ export default function App() {
     sessionStorage.removeItem('naija_shopper_session');
     setCurrentOwnerProfile(null);
     setCurrentShopper(null);
-    navigate('landing');
+    navigate('home');
   };
 
   const [logoClicks, setLogoClicks] = useState(0);
@@ -1455,8 +1409,8 @@ export default function App() {
           </div>
           
           <div className="hidden md:flex gap-8 items-center">
-            <button onClick={() => navigate('landing')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'landing' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>HOME</button>
-            <button onClick={() => navigate('home')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'home' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>EXPLORE</button>
+            <button onClick={() => navigate('home')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'home' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>HOME</button>
+            <button onClick={() => navigate('about')} className={`text-[11px] font-black transition-colors tracking-wide ${page === 'about' ? 'text-[#008751]' : 'text-gray-400 hover:text-gray-600'}`}>ABOUT</button>
             
             {isAdminAuthenticated ? (
               <button onClick={() => navigate('admin')} className="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-xs font-black shadow-md flex items-center gap-1.5 hover:bg-slate-800 transition-colors"><LayoutDashboard size={14} /> Control Centre</button>
@@ -1478,8 +1432,8 @@ export default function App() {
         </div>
         {isMenuOpen && (
           <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 p-6 flex flex-col gap-4 shadow-xl md:hidden animate-in slide-in-from-top-4 duration-200">
-            <button onClick={() => navigate('landing')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">Home</button>
-            <button onClick={() => navigate('home')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">Explore</button>
+            <button onClick={() => navigate('home')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">Home</button>
+            <button onClick={() => navigate('about')} className="text-left font-black text-[11px] uppercase tracking-widest text-gray-655 py-2 border-b border-gray-50">About Us</button>
             
             {isUserAuthenticated ? (
               <button onClick={() => window.location.href = '/dashboard'} className="w-full bg-[#008751] text-white py-4 rounded-xl font-black uppercase text-xs mt-2 shadow-lg">My Dashboard</button>
@@ -1502,7 +1456,6 @@ export default function App() {
 
       {/* PAGE ROUTER */}
       <main>
-        {page === 'landing' && <LandingView onNavigate={navigate} />}
         {page === 'home' && <HomeView onNavigate={navigate} onSelectBusiness={handleSelectBusiness} initialCategory={directoryOptions.category} />}
         {page === 'detail' && <DetailView business={selectedBiz} onBack={() => navigate('home')} />}
         {page === 'submit' && <SubmitView />}
@@ -1511,7 +1464,6 @@ export default function App() {
         {page === 'terms' && <TermsView />}
         {page === 'payment-success' && <PaymentSuccessView onNavigate={navigate} />}
         {page === 'login' && <LoginView onLoginSuccess={handleUserLoginSuccess} onNavigate={navigate} />}
-        {page === 'owner-dashboard' && <OwnerDashboardView business={currentOwnerProfile} onSignOut={handleUserSignOut} />}
         {page === 'admin-login' && <AdminLoginView onAdminLoginSuccess={(pass) => { sessionStorage.setItem('naija_admin_pass', pass); navigate('admin'); }} />}
         {page === 'admin' && <AdminView onNavigate={navigate} />}
       </main>
