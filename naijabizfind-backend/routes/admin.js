@@ -1,11 +1,26 @@
 import express from 'express';
 import Business from '../models/Business.js';
 import Transaction from '../models/Transaction.js';
+import User from '../models/User.js'; // ✅ Linked to your new User database model schema
 import adminAuth from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
-// All admin routes are protected by the adminAuth middleware
+// All admin routes are protected by the adminAuth middleware header checks
+
+// @route   GET /api/admin/users
+// @desc    Pull complete master account profiles list (Admin Panel Only)
+// @access  Admin only
+router.get('/users', adminAuth, async (req, res) => {
+  try {
+    // Queries all documents inside the User collections, masking out sensitive password strings safely
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    console.error('Admin master registry read failure:', error);
+    res.status(500).json({ message: 'Database transaction error on registry tracking', error: error.message });
+  }
+});
 
 // @route   GET /api/admin/submissions
 // @desc    List all businesses with 'pending' status (paid, awaiting approval)
