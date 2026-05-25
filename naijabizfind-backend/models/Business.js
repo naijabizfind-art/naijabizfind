@@ -54,7 +54,7 @@ const businessSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['basic', 'featured'],
+    enum: ['basic', 'featured', 'ultimate'], // ✅ FIX: Added 'ultimate' plan type to prevent validation crashes
     default: 'basic'
   },
   isPaid: {
@@ -70,6 +70,14 @@ const businessSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// ✅ FIX: Frontend Fallback Virtual to gracefully return shopPhoto if requested on root level instead of images object
+businessSchema.virtual('shopPhoto').get(function() {
+  return this.images?.shopPhoto || '';
 });
 
 // ✅ Production indexes for fast queries
