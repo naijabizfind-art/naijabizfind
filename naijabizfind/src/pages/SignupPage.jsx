@@ -1,37 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Store, User } from 'lucide-react';
+import { Store, User, Loader2, AlertCircle } from 'lucide-react';
+
+// Use the production backend API layer matching your server configurations
+const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [role, setRole] = useState('user'); // 'user' or 'owner'
   
-  // Controlled inputs for data retention simulation
+  // Form Input States
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Status Control States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Sync role parameters parsing from landing page hero buttons
+  // Read URL params to pre-select role if they clicked a specific button on landing page
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roleParam = params.get('role');
     if (roleParam === 'owner') setRole('owner');
   }, [location]);
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage('');
 
-    // Cache registration details locally to pass into user sessions 
-    localStorage.setItem('userRole', role);
-    localStorage.setItem('username', username || 'Nii Kpakpo');
-    
-    if (role === 'owner') {
-      // Provide a mock telephone for owner registration matching dashboard state tracking
-      localStorage.setItem('userPhone', '+2348031234567');
-      navigate('/dashboard');
-    } else {
-      navigate('/explore');
+    try {
+      // Base user session cache synchronization keys
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('username', username);
+
+      if (role === 'owner') {
+        // If registering as a business owner, redirect them directly to the onboarding dashboard workspace
+        // They will fill out their business profile database document details directly there
+        navigate('/dashboard');
+      } else {
+        // If it is a normal customer explorer, route them directly into the discovery market portal
+        navigate('/explore');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Network connectivity fault occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -43,8 +59,14 @@ export default function SignupPage() {
           <p className="text-sm text-gray-500 mt-1">Join NaijaBizFind today</p>
         </div>
 
+        {errorMessage && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-center gap-2 text-sm font-semibold">
+            <AlertCircle size={16} /> {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSignup} className="space-y-5">
-          {/* Role Toggle Grid */}
+          {/* Role Selector */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
@@ -102,7 +124,12 @@ export default function SignupPage() {
             />
           </div>
 
-          <button type="submit" className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-colors mt-4">
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
             Sign Up as {role === 'owner' ? 'Business' : 'Explorer'}
           </button>
           
