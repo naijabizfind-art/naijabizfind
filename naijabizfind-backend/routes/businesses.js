@@ -1,11 +1,11 @@
 import express from 'express';
 import Business from '../models/Business.js';
-import User from '../models/User.js'; // ✅ Linked to real user collection for account creation
+import User from '../models/User.js'; // ✅ Synchronized custom User schema model
 
 const router = express.Router();
 
 // @route   POST /api/businesses/register
-// @desc    Register a new business storefront page (status: pending, isPaid: false)
+// @desc    Register a new business (status: pending, isPaid: false)
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
@@ -53,7 +53,7 @@ router.post('/register', async (req, res) => {
 
     const savedBusiness = await newBusiness.save();
 
-    // ✅ DATABASE ROLE MANAGEMENT: Promote user role status to 'owner' inside MongoDB when listing a business storefront
+    // ✅ AUTOMATIC UPGRADE: Force update account capability configurations to 'owner' profile role inside DB
     await User.findOneAndUpdate(
       { phone: phone.trim() }, 
       { role: 'owner' }
@@ -67,19 +67,19 @@ router.post('/register', async (req, res) => {
 });
 
 // @route   POST /api/businesses/owner-login
-// @desc    Real authenticated user check or creation pipeline (Explorer, Business Owner, Admin)
+// @desc    Business owner login or registration pipeline by credentials check
 // @access  Public
 router.post('/owner-login', async (req, res) => {
   try {
     const { phone, password, username, email, role } = req.body;
 
     if (!phone) {
-      return res.status(400).json({ message: 'Phone number is required for authentication' });
+      return res.status(400).json({ message: 'Phone number parameter layout sequence is required.' });
     }
 
     const cleanPhone = phone.trim().replace(/[^0-9+]/g, '');
 
-    // 1. Search if the user profile already exists inside your MongoDB collections
+    // 1. Search if this user account profile already exists in the real MongoDB database
     let existingUser = await User.findOne({
       $or: [
         { phone: cleanPhone },
@@ -87,28 +87,34 @@ router.post('/owner-login', async (req, res) => {
       ]
     });
 
-    // 2. If the user doesn't exist (First time registering from Frontend), save them permanently to the DB!
+    // 2. If the user does not exist, save them permanently to the MongoDB database!
     if (!existingUser) {
       existingUser = new User({
         username: username || 'User_' + Math.floor(1000 + Math.random() * 9000),
         email: email ? email.toLowerCase().trim() : `${cleanPhone}@naijabizfind.com`,
         phone: cleanPhone,
-        password: password || 'secure_default_pass', // In production, wrap this within a bcrypt hash helper layer
-        role: role || 'user' // Default to normal explorer shopper if not explicitly an owner
+        password: password || 'secure_default_pass', // bcrypt hashing recommended for production build environments
+        role: role || 'user'
       });
       await existingUser.save();
     }
 
-    // 3. Search the business collections for matching storefront structures
+    // ✅ SECURITY BLOCK: Decline authentication requests instantly if user account is marked as blacklisted
+    if (existingUser.role === 'blacklisted') {
+      return res.status(403).json({ 
+        message: 'Access Blocked: This profile has been deactivated by administrative command guidelines.' 
+      });
+    }
+
+    // 3. Search businesses database for an active corporate listing layout matched to their profile
     const businessMatch = await Business.findOne({ phone: existingUser.phone });
 
-    // 4. Return an authentic backend data payload matching frontend state tracking expectations
     res.json({
       _id: businessMatch ? businessMatch._id : null,
       name: businessMatch ? businessMatch.name : existingUser.username,
       phone: existingUser.phone,
       email: existingUser.email,
-      role: existingUser.role, // Reflects true database role status: 'user' | 'owner' | 'admin'
+      role: existingUser.role, // Safe transmission profile key strings
       description: businessMatch ? businessMatch.description : '',
       plan: businessMatch ? businessMatch.plan : 'basic',
       status: businessMatch ? businessMatch.status : 'approved',
@@ -117,8 +123,8 @@ router.post('/owner-login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Owner login error database query failure:', error);
-    res.status(500).json({ message: 'Server Database Error', error: error.message });
+    console.error('Owner login verification query exception crash:', error);
+    res.status(500).json({ message: 'Internal server database communication failure.', error: error.message });
   }
 });
 
@@ -136,7 +142,7 @@ router.get('/', async (req, res) => {
 
     const businesses = await Business.find(filter)
       .select('-__v')
-      .sort({ plan: -1, createdAt: -1 }); // featured first, then newest
+      .sort({ plan: -1, createdAt: -1 });
 
     res.json(businesses);
   } catch (error) {
