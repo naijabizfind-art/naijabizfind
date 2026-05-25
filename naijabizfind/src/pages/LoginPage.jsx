@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const API_BASE = 'https://naijabizfind.onrender.com/api';
 
@@ -9,9 +9,12 @@ export default function LoginPage() {
   const [logoClicks, setLogoClicks] = useState(0);
   const [isAdminMode, setIsAdminMode] = useState(false);
   
-  // Controlled input form hooks
-  const [phoneOrEmail, setPhoneOrEmail] = useState('');
+  // Form input hooks
+  const [phoneInput, setPhoneInput] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Status monitors
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -32,34 +35,33 @@ export default function LoginPage() {
     setErrorMessage('');
 
     try {
-      // Express router endpoint tracking validation check inside your businesses.js module
       const res = await fetch(`${API_BASE}/businesses/owner-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneOrEmail })
+        body: JSON.stringify({ phone: phoneInput, password })
       });
       const data = await res.json();
 
       if (!res.ok) {
-        // Fallback approach if no registered business profile document matches the workspace phone query
-        // Safely paths alternative basic consumer scopes
-        localStorage.setItem('userRole', 'user');
-        localStorage.setItem('username', 'Explorer User');
-        navigate('/explore');
-        return;
+        throw new Error(data.message || 'Invalid telephone identification credentials.');
       }
 
-      // If business registration properties map cleanly, cache contextual settings instantly
-      localStorage.setItem('userRole', 'owner');
+      // Save database validated profiles globally to client cache
+      localStorage.setItem('userRole', data.role);
       localStorage.setItem('userPhone', data.phone);
       localStorage.setItem('username', data.name);
-      navigate('/dashboard');
+
+      if (data.role === 'owner') {
+        navigate('/dashboard');
+      } else if (data.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/explore');
+      }
 
     } catch (err) {
-      setErrorMessage('Database stream lost. Defaulting to standard offline access.');
-      localStorage.setItem('userRole', 'user');
-      navigate('/explore');
-    } bits: {
+      setErrorMessage(err.message || 'Database validation stream link broken.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -97,6 +99,7 @@ export default function LoginPage() {
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="text-center mb-8">
+              {/* Stealth Toggle Switch */}
               <div 
                 onClick={handleLogoClick}
                 className="w-12 h-12 bg-[#008751] rounded-xl flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-105 transition-transform shadow-lg shadow-green-900/20 select-none"
@@ -108,41 +111,50 @@ export default function LoginPage() {
             </div>
 
             {errorMessage && (
-              <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-700 p-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold">
+              <div className="mb-3 bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold animate-in fade-in">
                 <AlertCircle size={14} /> {errorMessage}
               </div>
             )}
 
             <form onSubmit={handleNormalLogin} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Phone Number or Email</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Phone Number</label>
                 <input 
                   type="text" 
                   required 
-                  value={phoneOrEmail}
-                  onChange={e => setPhoneOrEmail(e.target.value)}
+                  value={phoneInput}
+                  onChange={e => setPhoneInput(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
                   placeholder="e.g. +2348031234567" 
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
-                <input 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
-                  placeholder="••••••••" 
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    required 
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 pr-10 outline-none transition-all" 
+                    placeholder="••••••••" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all flex items-center justify-center gap-2"
+                className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all transform active:scale-95 shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
                 Log In
               </button>
               
