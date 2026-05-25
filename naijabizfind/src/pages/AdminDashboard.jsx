@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Users, Store, CheckCircle, XCircle, LogOut, Activity, Database, ChevronRight } from 'lucide-react';
+import { ShieldAlert, Users, Store, CheckCircle, XCircle, LogOut, Activity, Database, ChevronRight, Loader2 } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://naijabizfind.onrender.com/api';
 
 // --- Premium 3D Tilt Card (Dark Theme) ---
 const AdminTiltCard = ({ title, value, icon: Icon, delay, colorClass }) => {
@@ -66,11 +68,12 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
 
-  // Mocking the pending submissions from your backend
-  const [pendingListings, setPendingListings] = useState([
-    { _id: '1', name: 'AJ Enterprise Tech', category: 'technology', city: 'Accra', plan: 'featured' },
-    { _id: '2', name: 'Kpakpo Auto Spares', category: 'automotive', city: 'Kumasi', plan: 'basic' }
-  ]);
+  // Dynamic Data Stream States
+  const [pendingListings, setPendingListings] = useState([]);
+  const [allListingsCount, setAllListingsCount] = useState(0);
+  const [totalTransactionsValue, setTotalTransactionsValue] = useState(0);
+  const [isFetchingData, setIsFetchingData] = useState(true);
+  const [actionInProgress, setActionInProgress] = useState(null);
 
   // Parallax Scroll Tracking
   useEffect(() => {
@@ -79,23 +82,95 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Hydrate Control Center with Secure Network Requests
+  const loadControlCenterData = async () => {
+    try {
+      const adminSecret = localStorage.getItem('adminKey') || '';
+      const requestHeaders = {
+        'Content-Type': 'application/json',
+        'x-admin-password': adminSecret
+      };
+
+      // 1. Pull Paid But Awaiting Approval Submissions
+      const submissionsRes = await fetch(`${API_BASE}/admin/submissions`, { headers: requestHeaders });
+      const pendingData = await submissionsRes.json();
+      if (submissionsRes.ok) setPendingListings(pendingData);
+
+      // 2. Fetch Aggregated Metrics for Global Counters
+      const allRes = await fetch(`${API_BASE}/admin/all`, { headers: requestHeaders });
+      const allData = await allRes.json();
+      if (allRes.ok) setAllListingsCount(allData.length);
+
+      // 3. Extract Financial Transaction Log Volatilities
+      const transRes = await fetch(`${API_BASE}/admin/transactions`, { headers: requestHeaders });
+      const transData = await transRes.json();
+      if (transRes.ok) {
+        const totalRevenue = transData.reduce((acc, tx) => acc + (tx.amount || 0), 0);
+        setTotalTransactionsValue(totalRevenue);
+      }
+
+    } catch (err) {
+      console.error("Failed to synchronize admin panel with backend data nodes:", err);
+    } finally {
+      setIsFetchingData(false);
+    }
+  };
+
+  useEffect(() => {
+    loadControlCenterData();
+  }, []);
+
   // Smart Logout Function
   const handleLogout = () => {
-    // Clear the secret keys and roles from local storage
     localStorage.removeItem('adminKey');
     localStorage.removeItem('userRole');
-    // Send back to standard login
     navigate('/login');
   };
 
-  const handleApprove = (id) => {
-    // TODO: Call PUT /api/admin/approve/:id
-    setPendingListings(pendingListings.filter(b => b._id !== id));
+  // Live Core Verification Pipelines
+  const handleApprove = async (id) => {
+    setActionInProgress(id);
+    try {
+      const res = await fetch(`${API_BASE}/admin/approve/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': localStorage.getItem('adminKey') || ''
+        }
+      });
+      if (res.ok) {
+        setPendingListings(prev => prev.filter(b => b._id !== id));
+        setAllListingsCount(prev => prev + 1);
+      } else {
+        const err = await res.json();
+        alert(`Approval rejected by server: ${err.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionInProgress(null);
+    }
   };
 
-  const handleReject = (id) => {
-    // TODO: Call PUT /api/admin/reject/:id
-    setPendingListings(pendingListings.filter(b => b._id !== id));
+  const handleReject = async (id) => {
+    setActionInProgress(id);
+    try {
+      const res = await fetch(`${API_BASE}/admin/reject/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': localStorage.getItem('adminKey') || ''
+        },
+        body: JSON.stringify({ reason: "Listing did not meet directory guidelines." })
+      });
+      if (res.ok) {
+        setPendingListings(prev => prev.filter(b => b._id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionInProgress(null);
+    }
   };
 
   return (
@@ -159,9 +234,9 @@ export default function AdminDashboard() {
 
         {/* 3D Admin Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <AdminTiltCard title="Pending Approvals" value={pendingListings.length} icon={CheckCircle} delay="0s" colorClass="bg-yellow-500/20 text-yellow-500" />
-          <AdminTiltCard title="Total Businesses" value="142" icon={Store} delay="0.1s" colorClass="bg-green-500/20 text-green-500" />
-          <AdminTiltCard title="Total Users" value="3,892" icon={Users} delay="0.2s" colorClass="bg-blue-500/20 text-blue-500" />
+          <AdminTiltCard title="Pending Approvals" value={isFetchingData ? "..." : pendingListings.length} icon={CheckCircle} delay="0s" colorClass="bg-yellow-500/20 text-yellow-500" />
+          <AdminTiltCard title="Total Businesses" value={isFetchingData ? "..." : allListingsCount} icon={Store} delay="0.1s" colorClass="bg-green-500/20 text-green-500" />
+          <AdminTiltCard title="Platform Revenue" value={isFetchingData ? "..." : `₦${totalTransactionsValue.toLocaleString()}`} icon={Users} delay="0.2s" colorClass="bg-blue-500/20 text-blue-500" />
         </div>
 
         {/* Pending Submissions Data Table */}
@@ -176,7 +251,9 @@ export default function AdminDashboard() {
             </h3>
           </div>
 
-          {pendingListings.length === 0 ? (
+          {isFetchingData ? (
+            <div className="flex justify-center p-12"><Loader2 className="animate-spin text-red-500" size={32} /></div>
+          ) : pendingListings.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-gray-700 rounded-2xl">
               <CheckCircle className="mx-auto text-green-500 mb-4" size={40} />
               <p className="text-gray-400 font-bold">All caught up!</p>
@@ -187,8 +264,12 @@ export default function AdminDashboard() {
               {pendingListings.map((business) => (
                 <div key={business._id} className="flex flex-col md:flex-row items-center justify-between p-4 bg-black/40 border border-gray-800 rounded-2xl hover:border-gray-700 transition-colors group">
                   <div className="flex items-center gap-4 mb-4 md:mb-0">
-                    <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center">
-                      <Store className="text-gray-400" size={20} />
+                    <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center overflow-hidden">
+                      {business.images?.shopPhoto || business.shopPhoto ? (
+                        <img src={business.images?.shopPhoto || business.shopPhoto} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Store className="text-gray-400" size={20} />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-white flex items-center gap-2">
@@ -202,15 +283,24 @@ export default function AdminDashboard() {
                   </div>
                   
                   <div className="flex items-center gap-3 w-full md:w-auto">
-                    <button className="flex-1 md:flex-none text-gray-400 hover:text-white px-4 py-2 text-sm font-bold transition-colors">
-                      View Details
-                    </button>
-                    <button onClick={() => handleReject(business._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
-                      <XCircle size={20} />
-                    </button>
-                    <button onClick={() => handleApprove(business._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all shadow-lg shadow-green-900/20">
-                      <CheckCircle size={20} />
-                    </button>
+                    <a 
+                      href={`tel:${business.phone}`}
+                      className="flex-1 md:flex-none text-center text-gray-400 hover:text-white px-4 py-2 text-sm font-bold transition-colors"
+                    >
+                      Call Owner
+                    </a>
+                    {actionInProgress === business._id ? (
+                      <Loader2 className="animate-spin text-gray-400 mx-6" size={20} />
+                    ) : (
+                      <>
+                        <button onClick={() => handleReject(business._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                          <XCircle size={20} />
+                        </button>
+                        <button onClick={() => handleApprove(business._id)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all shadow-lg shadow-green-900/20">
+                          <CheckCircle size={20} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
