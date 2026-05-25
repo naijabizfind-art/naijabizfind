@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Store, User, Loader2, AlertCircle } from 'lucide-react';
 
-// Use the production backend API layer matching your server configurations
 const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 export default function SignupPage() {
@@ -10,12 +9,13 @@ export default function SignupPage() {
   const location = useLocation();
   const [role, setRole] = useState('user'); // 'user' or 'owner'
   
-  // Form Input States
+  // Controlled input states
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   
-  // Status Control States
+  // Loading and Error Status Hooks
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -32,20 +32,36 @@ export default function SignupPage() {
     setErrorMessage('');
 
     try {
-      // Base user session cache synchronization keys
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('username', username);
+      // Send registration payload directly to the authenticated user route
+      const res = await fetch(`${API_BASE}/businesses/owner-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          email,
+          phone,
+          password,
+          role
+        })
+      });
+      const data = await res.json();
 
-      if (role === 'owner') {
-        // If registering as a business owner, redirect them directly to the onboarding dashboard workspace
-        // They will fill out their business profile database document details directly there
+      if (!res.ok) {
+        throw new Error(data.message || 'Registration rejected by database cluster.');
+      }
+
+      // Populate local browser cache fields safely
+      localStorage.setItem('userRole', data.role);
+      localStorage.setItem('username', data.name);
+      localStorage.setItem('userPhone', data.phone);
+
+      if (data.role === 'owner') {
         navigate('/dashboard');
       } else {
-        // If it is a normal customer explorer, route them directly into the discovery market portal
         navigate('/explore');
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Network connectivity fault occurred.');
+      setErrorMessage(err.message || 'Failed to establish connection to authentication server.');
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +76,7 @@ export default function SignupPage() {
         </div>
 
         {errorMessage && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-center gap-2 text-sm font-semibold">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-center gap-2 text-sm font-semibold animate-in fade-in">
             <AlertCircle size={16} /> {errorMessage}
           </div>
         )}
@@ -113,7 +129,18 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Password</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Phone Number</label>
+            <input 
+              type="tel" 
+              required 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-[#008751] focus:border-[#008751] block p-3 outline-none transition-all" 
+              placeholder="e.g. +2348031234567" 
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 tracking-wide uppercase mb-1">Password</label>
             <input 
               type="password" 
               required 
@@ -127,9 +154,9 @@ export default function SignupPage() {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full text-white bg-[#008751] hover:bg-[#006B40] font-bold rounded-lg text-sm px-5 py-3.5 text-center transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-green-900/20 disabled:opacity-50"
           >
-            {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : null}
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
             Sign Up as {role === 'owner' ? 'Business' : 'Explorer'}
           </button>
           
