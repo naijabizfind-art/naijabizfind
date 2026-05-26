@@ -21,6 +21,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         
         {/* Core App Space: Normal Shoppers & Explorers */}
         <Route path="/explore" element={<App />} />
+
+        {/* ✅ FIX: Route the Paystack redirect page to App.jsx so it can extract the URL parameters and verify payment */}
+        <Route path="/payment-success" element={<App />} />
         
         {/* The Secured Admin Dashboard Gateway */}
         <Route path="/admin" element={<AdminDashboard />} />
