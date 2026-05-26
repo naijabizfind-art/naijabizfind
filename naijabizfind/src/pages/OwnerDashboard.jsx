@@ -83,7 +83,7 @@ export default function OwnerDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Navigation & Tab Switcher Loader States
-  const [activeTab, setActiveTab] = useState('overview'); 
+  const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add, settings
   const [isTogglingTab, setIsTogglingTab] = useState(false);
   
   // Data State
@@ -130,7 +130,12 @@ export default function OwnerDashboard() {
       const data = await res.json();
       
       if (res.ok && data) {
-        setMyListings(Array.isArray(data) ? data : data._id ? [data] : []); 
+        // ✅ FIX: Extract data dynamically using structural object responses
+        if (data.listings) {
+          setMyListings(data.listings);
+        } else {
+          setMyListings(Array.isArray(data) ? data : data._id ? [data] : []); 
+        }
       }
     } catch (err) {
       console.error("Failed to fetch listings:", err);
@@ -173,7 +178,7 @@ export default function OwnerDashboard() {
       let shopPhotoUrl = null;
       let certificateUrl = null;
 
-      // ✅ FIX: Package data using correctly tracked live local file states instead of undefined files object reference
+      // ✅ FIX: Pack actual tracked reactive states to avoid sending empty parameters
       if (shopPhotoFile || certificateFile) {
         const uploadData = new FormData();
         if (shopPhotoFile) uploadData.append('shopPhoto', shopPhotoFile);
@@ -299,7 +304,7 @@ export default function OwnerDashboard() {
         />
       )}
 
-      {/* --- Glassmorphism Sidebar --- */}
+      {/* --- Sidebar --- */}
       <aside className={`fixed inset-y-0 left-0 w-64 bg-white/70 backdrop-blur-2xl border-r border-white/50 flex flex-col z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-white/50 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -387,7 +392,7 @@ export default function OwnerDashboard() {
                   <Store size={40} />
                 </div>
                 <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">Ready to expand your reach?</h3>
-                <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing traffic from users across NaijaBizFind.</p>
+                <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing organic traffic from users across NaijaBizFind.</p>
                 <button onClick={() => { setEditingId(null); handleTabToggle('add'); }} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
                   <PlusCircle size={20} /> Register Business
                 </button>
@@ -521,7 +526,6 @@ export default function OwnerDashboard() {
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
                     <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]">
-                      <option value="">Select Category...</option>
                       <option value="fashion">Fashion & Apparel</option>
                       <option value="food">Food & Restaurant</option>
                       <option value="services">Professional Services</option>
