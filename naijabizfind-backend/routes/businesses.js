@@ -67,7 +67,7 @@ router.post('/register', async (req, res) => {
 });
 
 // @route   POST /api/businesses/owner-login
-// @desc    Business owner login or registration pipeline by credentials check
+// @desc    Business owner login or registration pipeline by credentials check (Returns array data list)
 // @access  Public
 router.post('/owner-login', async (req, res) => {
   try {
@@ -106,20 +106,18 @@ router.post('/owner-login', async (req, res) => {
       });
     }
 
-    // 3. Search businesses database for an active corporate listing layout matched to their profile
-    const businessMatch = await Business.findOne({ phone: existingUser.phone });
+    // 3. ✅ FIX: Search businesses database using find() to pull ALL matching multi-listing profiles owned by this phone account
+    const businessList = await Business.find({ phone: existingUser.phone });
 
+    // 4. Return complete response containing an embedded listings array to cleanly handle frontend loops
     res.json({
-      _id: businessMatch ? businessMatch._id : null,
-      name: businessMatch ? businessMatch.name : existingUser.username,
-      phone: existingUser.phone,
-      email: existingUser.email,
-      role: existingUser.role, // Safe transmission profile key strings
-      description: businessMatch ? businessMatch.description : '',
-      plan: businessMatch ? businessMatch.plan : 'basic',
-      status: businessMatch ? businessMatch.status : 'approved',
-      isPaid: businessMatch ? businessMatch.isPaid : true,
-      shopPhoto: businessMatch ? (businessMatch.images?.shopPhoto || businessMatch.shopPhoto) : ''
+      user: {
+        username: existingUser.username,
+        email: existingUser.email,
+        phone: existingUser.phone,
+        role: existingUser.role
+      },
+      listings: businessList
     });
 
   } catch (error) {
