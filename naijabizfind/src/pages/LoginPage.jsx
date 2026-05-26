@@ -46,17 +46,30 @@ export default function LoginPage() {
         throw new Error(data.message || 'Invalid telephone identification credentials.');
       }
 
-      // Save database validated profiles globally to client cache
-      localStorage.setItem('userRole', data.role);
-      localStorage.setItem('userPhone', data.phone);
-      localStorage.setItem('username', data.name);
+      // ✅ FIX: Extract parameters from nested data.user object to match backend schema updates perfectly
+      if (data.user) {
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userPhone', data.user.phone);
+        localStorage.setItem('username', data.user.username);
 
-      if (data.role === 'owner') {
-        navigate('/dashboard');
-      } else if (data.role === 'admin') {
-        navigate('/admin');
+        if (data.user.role === 'owner') {
+          navigate('/dashboard');
+        } else if (data.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/explore');
+        }
       } else {
-        navigate('/explore');
+        // Fallback for flat database structures
+        localStorage.setItem('userRole', data.role || 'user');
+        localStorage.setItem('userPhone', data.phone || phoneInput);
+        localStorage.setItem('username', data.name || 'Explorer');
+
+        if (data.role === 'owner') {
+          navigate('/dashboard');
+        } else {
+          navigate('/explore');
+        }
       }
 
     } catch (err) {
