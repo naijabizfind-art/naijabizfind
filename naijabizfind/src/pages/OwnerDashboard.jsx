@@ -5,7 +5,8 @@ import {
   Settings, TrendingUp, Users, Star, Menu, X, Loader2, Upload, AlertCircle, CheckCircle2, Edit3, Crown, Check, Activity
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ✅ FIX: Swapped hardcoded localhost endpoint to your live Render endpoint for clean data communication
+const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 // --- Premium 3D Tilt Card Component (Untouched UI) ---
 const TiltCard = ({ title, value, icon: Icon, delay }) => {
@@ -103,7 +104,6 @@ export default function OwnerDashboard() {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Smooth initial boot sequence
     const initFetch = async () => {
       await fetchUserListings();
       setIsPageLoading(false);
@@ -127,7 +127,6 @@ export default function OwnerDashboard() {
       const data = await res.json();
       
       if (res.ok && data) {
-        // Ensure data maps cleanly to an iterable structure for rendering
         setMyListings(Array.isArray(data) ? data : data._id ? [data] : []); 
       }
     } catch (err) {
@@ -137,7 +136,6 @@ export default function OwnerDashboard() {
     }
   };
 
-  // Switch tabs smoothly with structured animation transitions
   const handleTabToggle = (targetTab) => {
     setIsTogglingTab(true);
     setIsMobileMenuOpen(false);
@@ -156,7 +154,6 @@ export default function OwnerDashboard() {
     setFiles({ ...files, [e.target.name]: e.target.files[0] });
   };
 
-  // --- EDIT LISTING INITIATOR ---
   const triggerEdit = (business) => {
     setFormData({
       name: business.name, category: business.category, city: business.city, 
@@ -169,7 +166,6 @@ export default function OwnerDashboard() {
     handleTabToggle('add');
   };
 
-  // --- SUBMIT / UPDATE REGISTRATION PIPELINE ---
   const handleRegisterOrUpdate = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -178,7 +174,6 @@ export default function OwnerDashboard() {
       let shopPhotoUrl = null;
       let certificateUrl = null;
 
-      // 1. Upload Files via the /api/upload route only if new files were selected
       if (files.shopPhoto || files.certificate) {
         const uploadData = new FormData();
         if (files.shopPhoto) uploadData.append('shopPhoto', files.shopPhoto);
@@ -195,7 +190,6 @@ export default function OwnerDashboard() {
         certificateUrl = uploadUrls.certificate;
       }
 
-      // 2. Prepare Payload
       const businessPayload = { ...formData };
       if (shopPhotoUrl) businessPayload.shopPhoto = shopPhotoUrl;
       if (certificateUrl) businessPayload.certificate = certificateUrl;
@@ -203,7 +197,6 @@ export default function OwnerDashboard() {
       let res, data;
 
       if (editingId) {
-        // UPDATE EXISTING (Requires backend PUT route)
         res = await fetch(`${API_BASE}/businesses/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -215,7 +208,6 @@ export default function OwnerDashboard() {
         await fetchUserListings(); 
         handleTabToggle('listings');
       } else {
-        // REGISTER NEW
         res = await fetch(`${API_BASE}/businesses/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -228,19 +220,17 @@ export default function OwnerDashboard() {
         handlePayment(data); 
       }
 
-      // Clean form parameters
       setEditingId(null);
       setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' });
       setFiles({ shopPhoto: null, certificate: null });
 
     } catch (error) {
       alert(`Error: ${error.message}`);
-    } finally {
+    } {
       setIsSubmitting(false);
     }
   };
 
-  // --- PAYSTACK INITIALIZATION ---
   const handlePayment = async (business) => {
     try {
       const res = await fetch(`${API_BASE}/payments/initialize`, {
@@ -266,7 +256,6 @@ export default function OwnerDashboard() {
     navigate('/login');
   };
 
-  // Compute live contextual views strictly derived from state payloads
   const totalViewsCalculated = myListings.reduce((acc, curr) => acc + (curr.views || 0), 0);
   const performanceRating = myListings.reduce((acc, curr) => acc + (curr.rating || 5.0), 0) / (myListings.length || 1);
 
@@ -382,7 +371,6 @@ export default function OwnerDashboard() {
         ============================================= */}
         {activeTab === 'overview' && (
           <div className="animate-[fadeInUp_0.5s_ease-out]">
-            {/* Live Synchronized Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               <TiltCard title="Total Views" value={totalViewsCalculated} icon={TrendingUp} delay="0s" />
               <TiltCard title="Active Listings" value={myListings.length} icon={Store} delay="0.1s" />
@@ -485,7 +473,7 @@ export default function OwnerDashboard() {
           <div className="max-w-5xl mx-auto animate-[fadeInUp_0.5s_ease-out]">
             <form onSubmit={handleRegisterOrUpdate} className="space-y-8">
               
-              {/* Premium Package Selection UI */}
+              {/* Package Selection UI */}
               <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl">
                 <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
                   <Crown className="text-yellow-500" /> Choose Your Package
@@ -534,11 +522,11 @@ export default function OwnerDashboard() {
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
                     <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-[#008751]">
                       <option value="">Select Category...</option>
-                      <option value="technology">Technology & IT</option>
-                      <option value="automotive">Automotive</option>
-                      <option value="retail">Retail & Fashion</option>
+                      <option value="fashion">Fashion & Apparel</option>
                       <option value="food">Food & Restaurant</option>
                       <option value="services">Professional Services</option>
+                      <option value="beauty">Beauty & Salon</option>
+                      <option value="tech">Technology & Infrastructure</option>
                     </select>
                   </div>
                   <div>
