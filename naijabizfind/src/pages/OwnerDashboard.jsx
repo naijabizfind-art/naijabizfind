@@ -5,7 +5,7 @@ import {
   Settings, TrendingUp, Users, Star, Menu, X, Loader2, Upload, AlertCircle, CheckCircle2, Edit3, Crown, Check, Activity
 } from 'lucide-react';
 
-// ✅ FIX: Swapped hardcoded localhost endpoint to your live Render endpoint for clean data communication
+// ✅ Live production API endpoint configuration
 const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 // --- Premium 3D Tilt Card Component (Untouched UI) ---
@@ -83,7 +83,7 @@ export default function OwnerDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Navigation & Tab Switcher Loader States
-  const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add, settings
+  const [activeTab, setActiveTab] = useState('overview'); 
   const [isTogglingTab, setIsTogglingTab] = useState(false);
   
   // Data State
@@ -94,10 +94,13 @@ export default function OwnerDashboard() {
 
   // Form State
   const [formData, setFormData] = useState({
-    name: '', category: '', city: '', address: '', description: '',
+    name: '', category: 'fashion', city: '', address: '', description: '',
     email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic'
   });
-  const [files, setFiles] = useState({ shopPhoto: null, certificate: null });
+  
+  // File References
+  const [shopPhotoFile, setShopPhotoFile] = useState(null);
+  const [certificateFile, setCertificateFile] = useState(null);
 
   // Initial Load Animation & Data Fetching
   useEffect(() => {
@@ -150,10 +153,6 @@ export default function OwnerDashboard() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e) => {
-    setFiles({ ...files, [e.target.name]: e.target.files[0] });
-  };
-
   const triggerEdit = (business) => {
     setFormData({
       name: business.name, category: business.category, city: business.city, 
@@ -174,10 +173,11 @@ export default function OwnerDashboard() {
       let shopPhotoUrl = null;
       let certificateUrl = null;
 
-      if (files.shopPhoto || files.certificate) {
+      // ✅ FIX: Package data using correctly tracked live local file states instead of undefined files object reference
+      if (shopPhotoFile || certificateFile) {
         const uploadData = new FormData();
-        if (files.shopPhoto) uploadData.append('shopPhoto', files.shopPhoto);
-        if (files.certificate) uploadData.append('certificate', files.certificate);
+        if (shopPhotoFile) uploadData.append('shopPhoto', shopPhotoFile);
+        if (certificateFile) uploadData.append('certificate', certificateFile);
 
         const uploadRes = await fetch(`${API_BASE}/upload`, {
           method: 'POST',
@@ -221,12 +221,13 @@ export default function OwnerDashboard() {
       }
 
       setEditingId(null);
-      setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' });
-      setFiles({ shopPhoto: null, certificate: null });
+      setShopPhotoFile(null);
+      setCertificateFile(null);
+      setFormData({ name: '', category: 'fashion', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' });
 
     } catch (error) {
       alert(`Error: ${error.message}`);
-    } {
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -319,7 +320,7 @@ export default function OwnerDashboard() {
           <button onClick={() => handleTabToggle('listings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'listings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <Store size={18} /> My Listings
           </button>
-          <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
+          <button onClick={() => { setEditingId(null); setFormData({ name: '', category: 'fashion', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'add' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
             <PlusCircle size={18} /> Add New Listing
           </button>
           <button onClick={() => handleTabToggle('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${activeTab === 'settings' ? 'bg-white text-[#008751] shadow-sm border border-green-100' : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'}`}>
@@ -358,7 +359,7 @@ export default function OwnerDashboard() {
           </div>
           
           {activeTab !== 'add' && (
-            <button onClick={() => { setEditingId(null); setFormData({ name: '', category: '', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
+            <button onClick={() => { setEditingId(null); setFormData({ name: '', category: 'fashion', city: '', address: '', description: '', email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic' }); handleTabToggle('add'); }} className="group relative bg-[#008751] text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#006B40] transition-all shadow-lg shadow-green-900/20 hover:-translate-y-1 overflow-hidden">
               <div className="absolute inset-0 w-full h-full bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
               <PlusCircle size={18} className="relative z-10 hidden md:block" />
               <span className="relative z-10">Add Listing</span>
@@ -386,7 +387,7 @@ export default function OwnerDashboard() {
                   <Store size={40} />
                 </div>
                 <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">Ready to expand your reach?</h3>
-                <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing organic traffic from users across NaijaBizFind.</p>
+                <p className="text-gray-500 text-sm md:text-base max-w-md mb-8 leading-relaxed">Create your first verified business listing to start capturing traffic from users across NaijaBizFind.</p>
                 <button onClick={() => { setEditingId(null); handleTabToggle('add'); }} className="bg-gray-900 text-white px-8 py-4 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-800 transition-all hover:scale-105 shadow-xl">
                   <PlusCircle size={20} /> Register Business
                 </button>
@@ -472,7 +473,6 @@ export default function OwnerDashboard() {
         {activeTab === 'add' && (
           <div className="max-w-5xl mx-auto animate-[fadeInUp_0.5s_ease-out]">
             <form onSubmit={handleRegisterOrUpdate} className="space-y-8">
-              
               {/* Package Selection UI */}
               <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl">
                 <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
@@ -551,12 +551,14 @@ export default function OwnerDashboard() {
                   <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
                     <Upload className="mx-auto text-gray-400 mb-2" />
                     <label className="block text-sm font-bold text-gray-700 mb-1">Upload Shop Photo {editingId ? '(Optional)' : '(Required)'}</label>
-                    <input type="file" accept="image/*" name="shopPhoto" onChange={handleFileChange} required={!editingId} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-green-50 file:text-green-700" />
+                    {/* ✅ FIX: Properly tracking file selections using state hook setters directly */}
+                    <input type="file" accept="image/*" onChange={(e) => setShopPhotoFile(e.target.files[0])} required={!editingId} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-green-50 file:text-green-700" />
                   </div>
                   <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
                     <CheckCircle2 className="mx-auto text-gray-400 mb-2" />
                     <label className="block text-sm font-bold text-gray-700 mb-1">Upload Certificate (Optional)</label>
-                    <input type="file" accept="image/*,.pdf" name="certificate" onChange={handleFileChange} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-blue-50 file:text-blue-700" />
+                    {/* ✅ FIX: Properly tracking file selections using state hook setters directly */}
+                    <input type="file" accept="image/*,.pdf" onChange={(e) => setCertificateFile(e.target.files[0])} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-blue-50 file:text-blue-700" />
                   </div>
                 </div>
               </div>
