@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ShieldAlert, Users, Store, CheckCircle, XCircle, LogOut, Activity, 
   Database, ChevronRight, Loader2, Clock, MapPin, Phone, Eye, Check, 
-  Ban, TrendingUp, Zap, ShieldCheck, FileSpreadsheet, CreditCard, FileText, X, Mail, ShieldAlert as BlacklistIcon
+  Ban, TrendingUp, Zap, ShieldCheck, FileSpreadsheet, CreditCard, FileText, X, Mail, EyeOff, ArrowRight, ShieldAlert as BlacklistIcon
 } from 'lucide-react';
 
-// Synced admin panel API base explicitly with your active production cluster
-const API_BASE = 'https://naijabizfind.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://naijabizfind.onrender.com/api';
 
 const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.shopPhoto || '';
 const getCertPhoto = (biz) => biz?.images?.certificate || biz?.certificate || '';
@@ -76,7 +75,14 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
 
-  // Core Orchestration States
+  // Authentication & Gatekeeper States
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminKey') || '');
+  const [isPromptOpen, setIsPromptOpen] = useState(() => !localStorage.getItem('adminKey'));
+  const [promptPassword, setPromptPassword] = useState('');
+  const [showPromptPass, setShowPromptPass] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  // Core Tab Orchestration States
   const [currentTab, setCurrentTab] = useState('overview'); 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(null);
@@ -104,18 +110,24 @@ export default function AdminDashboard() {
   }, []);
 
   // Hydrate Control Center with Secure Network Requests
-  const loadControlCenterData = async () => {
+  const loadControlCenterData = async (targetToken = adminToken) => {
+    if (!targetToken) {
+      setIsFetchingData(false);
+      return;
+    }
     setIsFetchingData(true);
+    setAuthError('');
     try {
-      // ✅ FALLBACK AUTH GUARD: Read 'adminKey' safely, support fallback values if empty to bypass 401 locks
-      const adminSecret = localStorage.getItem('adminKey') || 'admin123';
       const requestHeaders = {
         'Content-Type': 'application/json',
-        'x-admin-password': adminSecret
+        'x-admin-password': targetToken
       };
 
       // 1. Fetch ALL businesses for complete visibility filtering logs
       const allRes = await fetch(`${API_BASE}/admin/all`, { headers: requestHeaders });
+      if (allRes.status === 401) {
+        throw new Error('Verification Denied: Admin encryption key mismatched.');
+      }
       const allData = await allRes.json();
       if (allRes.ok) setBusinesses(Array.isArray(allData) ? allData : []);
 
@@ -129,16 +141,30 @@ export default function AdminDashboard() {
       const usersData = await usersRes.json();
       if (usersRes.ok) setUsersList(Array.isArray(usersData) ? usersData : []);
 
+      // If all requests pass, close prompt lock completely
+      setIsPromptOpen(false);
     } catch (err) {
-      console.error("Failed to synchronize admin command center nodes:", err);
+      console.error("Administrative authentication clearance failure:", err);
+      setAuthError(err.message || 'Verification Error.');
+      setIsPromptOpen(true);
     } finally {
       setIsFetchingData(false);
     }
   };
 
   useEffect(() => {
-    loadControlCenterData();
-  }, []);
+    if (adminToken) {
+      loadControlCenterData(adminToken);
+    }
+  }, [adminToken]);
+
+  const handlePromptSubmit = (e) => {
+    e.preventDefault();
+    if (!promptPassword.trim()) return;
+    localStorage.setItem('adminKey', promptPassword.trim());
+    setAdminToken(promptPassword.trim());
+    loadControlCenterData(promptPassword.trim());
+  };
 
   // Smart Logout Function
   const handleLogout = () => {
@@ -155,7 +181,7 @@ export default function AdminDashboard() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': localStorage.getItem('adminKey') || 'admin123'
+          'x-admin-password': adminToken
         },
         body: JSON.stringify({ reason: "Listing verified against community index." })
       });
@@ -173,7 +199,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Live Blacklist / Account Deactivation Toggle Engine
+  // Live Blacklist Toggle Engine
   const toggleUserBlacklist = async (id, currentRole) => {
     setActionInProgress(id);
     const targetAction = currentRole === 'blacklisted' ? 'activate' : 'blacklist';
@@ -184,12 +210,11 @@ export default function AdminDashboard() {
     }
 
     try {
-      const adminSecret = localStorage.getItem('adminKey') || 'admin123';
       const res = await fetch(`${API_BASE}/admin/users/blacklist/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': adminSecret
+          'x-admin-password': adminToken
         }
       });
       const data = await res.json();
@@ -208,12 +233,10 @@ export default function AdminDashboard() {
     }
   };
 
-  // Metric computations for command Overview tab derived completely from state layers
   const totalRevenue = transactions.filter(t => t?.status === 'success').reduce((sum, t) => sum + (t?.amount || 0), 0);
   const pendingApprovalsCount = businesses.filter(b => b?.status === 'pending' && b?.isPaid).length;
   const activeListingsCount = businesses.filter(b => b?.status === 'approved' && b?.isPaid).length;
 
-  // Filter listings across master tables cleanly
   const filteredBusinesses = businesses.filter(b => {
     if (!b) return false;
     const matchesStatus = statusFilter === '' || b.status === statusFilter;
@@ -224,7 +247,6 @@ export default function AdminDashboard() {
     return matchesStatus && matchesPayment && matchesSearch;
   });
 
-  // Filter accounts list across dataset matrices cleanly
   const filteredUsers = usersList.filter(u => {
     if (!u) return false;
     const matchesRole = userRoleFilter === '' || u.role === userRoleFilter;
@@ -234,6 +256,62 @@ export default function AdminDashboard() {
       u.phone?.includes(userSearchQuery);
     return matchesRole && matchesSearch;
   });
+
+  if (isPromptOpen) {
+    return (
+      <div className="min-h-screen bg-[#060606] flex items-center justify-center p-4 text-white font-sans relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div className="absolute w-96 h-96 bg-red-600/10 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
+          <div className="absolute w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl bottom-10 right-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-md bg-gray-900/90 backdrop-blur-xl border border-gray-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
+            <ShieldAlert size={32} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black tracking-tight">Security Command Vault</h2>
+            <p className="text-xs text-red-400 font-extrabold mt-1.5 uppercase tracking-widest">Platform Core Authorization</p>
+          </div>
+
+          {authError && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 animate-in fade-in">
+              <XCircle size={14} /> {authError}
+            </div>
+          )}
+
+          <form onSubmit={handlePromptSubmit} className="space-y-4 text-left">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black tracking-wider uppercase text-gray-400">Encryption Passphrase</label>
+              <div className="relative">
+                <input 
+                  type={showPromptPass ? "text" : "password"}
+                  value={promptPassword}
+                  onChange={e => setPromptPassword(e.target.value)}
+                  placeholder="Enter Server ADMIN_PASSWORD" 
+                  required
+                  className="w-full p-4 pr-12 bg-black/40 border border-gray-800 rounded-xl font-bold text-sm outline-none text-white focus:border-red-500 transition-all" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPromptPass(!showPromptPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  {showPromptPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+              Decrypt Dashboard Core <ArrowRight size={16} />
+            </button>
+            <button type="button" onClick={() => navigate('/login')} className="w-full text-center text-xs font-bold text-gray-500 hover:text-white pt-2 transition-colors">
+              Return to regular login portal
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex relative overflow-hidden font-sans text-white">
@@ -344,13 +422,12 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-6 shadow-2xl space-y-4">
-              <h3 className="font-black text-white text-base tracking-tight">Ecosystem Framework Proportions</h3>
-              <p className="text-xs text-gray-500">Platform operational allocation matrices</p>
+              <h3 className="font-black text-white text-base tracking-tight">User Proportions</h3>
+              <p className="text-xs text-gray-500">System account allocation profiles</p>
               <div className="space-y-4 pt-2">
                 <div>
                   <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
                     <span>Business Storefront Owners</span>
-                    {/* ✅ FIX: Added safety parameter checking u?.role to completely block the name reading exception crash */}
                     <span>{usersList.filter(u => u?.role === 'owner').length} profile nodes</span>
                   </div>
                   <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
@@ -360,11 +437,10 @@ export default function AdminDashboard() {
                 <div>
                   <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
                     <span>Explorer Consumers</span>
-                    {/* ✅ FIX: Added safety parameter checking u?.role to completely block the name reading exception crash */}
-                    <span>{usersList.filter(u => u?.role === 'user').length} active accounts</span>
+                    <span>{usersList.filter(u => u?.role === 'user').length} accounts</span>
                   </div>
                   <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 h-full rounded-full w-[80%]" />
+                    <div className="bg-blue-500 h-full rounded-full w-[75%]" />
                   </div>
                 </div>
               </div>
@@ -575,7 +651,7 @@ export default function AdminDashboard() {
                           ) : user?.role === 'blacklisted' ? (
                             <>Unban Account</>
                           ) : (
-                            <><Ban size={12} /> Blacklist</>
+                            <><BlacklistIcon size={12} /> Blacklist</>
                           )}
                         </button>
                       )}
