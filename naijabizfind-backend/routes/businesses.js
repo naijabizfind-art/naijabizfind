@@ -1,6 +1,7 @@
 import express from 'express';
+import bcrypt from 'bcrypt'; // ✅ Cryptographic library for secure password hashing
 import Business from '../models/Business.js';
-import User from '../models/User.js'; // ✅ Synchronized custom User schema model
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -87,16 +88,31 @@ router.post('/owner-login', async (req, res) => {
       ]
     });
 
-    // 2. If the user does not exist, save them permanently to the MongoDB database!
+    // 2. If the user does not exist (Registration Flow from Signup Page), hash password and save them permanently to the MongoDB database!
     if (!existingUser) {
+      const providedPassword = password || 'secure_default_pass';
+      
+      // ✅ BCRYPT ENCRYPTION: Hash raw plain-text password using 10 salt rounds before saving to DB
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(providedPassword, salt);
+
       existingUser = new User({
         username: username || 'User_' + Math.floor(1000 + Math.random() * 9000),
         email: email ? email.toLowerCase().trim() : `${cleanPhone}@naijabizfind.com`,
         phone: cleanPhone,
-        password: password || 'secure_default_pass', // bcrypt hashing recommended for production build environments
+        password: hashedPassword, // ✅ Stored safely as an encrypted hash string
         role: role || 'user'
       });
       await existingUser.save();
+    } else {
+      // 3. If the user DOES exist (Login Flow from Login Page), securely verify the password credential signature matching algorithm
+      if (password) {
+        // ✅ BCRYPT COMPARISON: Compare provided plain password string with securely hashed database counterpart
+        const isMatch = await bcrypt.compare(password, existingUser.password);
+        if (!isMatch) {
+          return res.status(401).json({ message: 'Authentication Failed: Invalid password signature match.' });
+        }
+      }
     }
 
     // ✅ SECURITY BLOCK: Decline authentication requests instantly if user account is marked as blacklisted
@@ -106,10 +122,10 @@ router.post('/owner-login', async (req, res) => {
       });
     }
 
-    // 3. ✅ FIX: Search businesses database using find() to pull ALL matching multi-listing profiles owned by this phone account
+    // 4. Search businesses database using find() to pull ALL matching multi-listing profiles owned by this phone account
     const businessList = await Business.find({ phone: existingUser.phone });
 
-    // 4. Return complete response containing an embedded listings array to cleanly handle frontend loops
+    // 5. Return complete response containing an embedded listings array to cleanly handle frontend loops
     res.json({
       user: {
         username: existingUser.username,
