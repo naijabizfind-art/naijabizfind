@@ -6,9 +6,9 @@ import {
   Ban, TrendingUp, Zap, ShieldCheck, FileSpreadsheet, CreditCard, FileText, X, Mail, ShieldAlert as BlacklistIcon
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://naijabizfind.onrender.com/api';
+// ✅ FIX: Synced admin panel API base explicitly with your active production cluster
+const API_BASE = 'https://naijabizfind.onrender.com/api';
 
-// Helper to pull image variables safely across schema types
 const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.shopPhoto || '';
 const getCertPhoto = (biz) => biz?.images?.certificate || biz?.certificate || '';
 
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   const [scrollY, setScrollY] = useState(0);
 
   // Core Orchestration States
-  const [currentTab, setCurrentTab] = useState('overview'); // 'overview' | 'submissions' | 'all' | 'transactions' | 'users'
+  const [currentTab, setCurrentTab] = useState('overview'); 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(null);
   const [cacPreviewUrl, setCacPreviewUrl] = useState(null);
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   // Live Data Matrices
   const [businesses, setBusinesses] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [usersList, setUsersList] = useState([]); // Master User State Cache
+  const [usersList, setUsersList] = useState([]);
 
   // Administrative Filtering Controls
   const [statusFilter, setStatusFilter] = useState('');
@@ -195,7 +195,6 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         alert(data.message);
-        // Refresh local memory tracking state seamlessly
         setUsersList(prev => prev.map(user => user._id === id ? { ...user, role: data.user.role } : user));
       } else {
         alert(`Failed to update account scope: ${data.message}`);
@@ -269,7 +268,7 @@ export default function AdminDashboard() {
           <button onClick={() => setCurrentTab('all')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'all' ? 'bg-gray-900 text-white border border-gray-700 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
             <Store size={18} className="text-emerald-500" /> All Businesses
           </button>
-          <button onClick={() => setCurrentTab('users')} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'users' ? 'bg-gray-900 text-white border border-gray-700 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
+          <button onClick={() => setCurrentTab('users')} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition-all text-left ${currentTab === 'users' ? 'bg-gray-900 text-white border border-gray-707 shadow-sm' : 'text-gray-500 hover:bg-gray-950 hover:text-gray-300'}`}>
             <div className="flex items-center gap-3"><Users size={18} className="text-purple-400" /> User Accounts</div>
             {usersList.length > 0 && <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{usersList.length}</span>}
           </button>
@@ -340,25 +339,25 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-6 shadow-2xl space-y-4">
-              <h3 className="font-black text-white text-base tracking-tight">Ecosystem Framework Proportions</h3>
-              <p className="text-xs text-gray-500">Platform operational allocation matrices</p>
+              <h3 className="font-black text-white text-base tracking-tight">User Proportions</h3>
+              <p className="text-xs text-gray-500">System account allocation profiles</p>
               <div className="space-y-4 pt-2">
                 <div>
                   <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
                     <span>Business Storefront Owners</span>
-                    <span>{usersList.filter(u => u.role === 'owner').length} profile nodes</span>
+                    <span>{usersList.filter(u => u.role === 'owner').length} listings</span>
                   </div>
                   <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full rounded-full w-[45%]" />
+                    <div className="bg-amber-500 h-full w-[45%]" />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs font-bold text-gray-300 mb-1">
                     <span>Explorer Consumers</span>
-                    <span>{usersList.filter(u => u.role === 'user').length} active accounts</span>
+                    <span>{usersList.filter(u => u.role === 'user').length} accounts</span>
                   </div>
                   <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 h-full rounded-full w-[80%]" />
+                    <div className="bg-blue-500 h-full w-[75%]" />
                   </div>
                 </div>
               </div>
@@ -433,7 +432,7 @@ export default function AdminDashboard() {
         )}
 
         {/* =========================================
-            TAB 3: MASTER REGISTRY (SEARCH ENGINE)
+            TAB 3: MASTER PLATFORM REGISTRY
         ============================================= */}
         {currentTab === 'all' && (
           <div className="space-y-6 animate-[fadeInUp_0.5s_ease-out]">
