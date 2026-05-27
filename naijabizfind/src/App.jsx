@@ -35,7 +35,7 @@ const CATEGORIES = [
 ];
 
 // --- HELPERS ---
-const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.image || '';
+const getShopPhoto = (biz) => biz?.images?.shopPhoto || biz?.shopPhoto || '';
 const isFeatured = (biz) => biz?.plan === 'featured';
 const getHours = (biz) => biz?.workingHours ? `${biz.workingHours.open} - ${biz.workingHours.close}` : biz?.hours || '';
 
@@ -125,8 +125,8 @@ const BusinessCard = ({ biz, onClick }) => {
     >
       <div className="relative h-40 sm:h-44 overflow-hidden">
         <img 
-          src={getShopPhoto(biz)} 
-          alt={biz.name} 
+          src={getShopPhoto(biz) || 'https://via.placeholder.com/400x300?text=No+Image'} 
+          alt={biz?.name || 'Store'} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
         />
         {isFeatured(biz) && (
@@ -137,16 +137,16 @@ const BusinessCard = ({ biz, onClick }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 truncate group-hover:text-[#008751] transition-colors">{biz.name}</h3>
+        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 truncate group-hover:text-[#008751] transition-colors">{biz?.name}</h3>
         <div className="flex items-center text-gray-500 text-[10px] sm:text-xs mb-3">
-          <MapPin size={12} className="mr-1 text-[#008751]" /> {biz.city}
+          <MapPin size={12} className="mr-1 text-[#008751]" /> {biz?.city}
         </div>
         <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <Star size={14} fill={COLORS.accent} stroke={COLORS.accent} className="group-hover:rotate-[72deg] transition-transform duration-500" />
-            <span className="text-xs sm:text-sm font-bold text-gray-900">{biz.rating || '5.0'}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-900">{biz?.rating || '5.0'}</span>
           </div>
-          <span className="text-[#008751] font-bold text-[10px] sm:text-xs capitalize bg-emerald-50 px-2 py-0.5 rounded-full">{biz.category}</span>
+          <span className="text-[#008751] font-bold text-[10px] sm:text-xs capitalize bg-emerald-50 px-2 py-0.5 rounded-full">{biz?.category}</span>
         </div>
       </div>
     </div>
@@ -196,15 +196,15 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         }
       } catch (err) {
         console.error('Failed fetching data streaming:', err);
-      } finally {
+      } final: {
         setLoading(false);
       }
     };
     fetchFeatured();
   }, []);
 
-  const featured = businesses.filter(b => isFeatured(b)).slice(0, 5);
-  const popular = businesses.filter(b => !isFeatured(b)).slice(0, 10);
+  const featured = businesses.filter(b => b && isFeatured(b)).slice(0, 5);
+  const popular = businesses.filter(b => b && !isFeatured(b)).slice(0, 10);
 
   // Initialize Scroll Reveal Elements
   const catRef = useScrollReveal();
@@ -295,7 +295,7 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           <p className="text-sm text-gray-400 font-medium bg-gray-50 p-6 rounded-xl border border-dashed">No featured directory entries live yet.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 animate-in fade-in duration-500">
-            {featured.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+            {featured.map(biz => biz && <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
           </div>
         )}
       </section>
@@ -331,7 +331,7 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
           <p className="text-sm text-gray-400 font-medium bg-gray-50 p-6 rounded-xl border border-dashed">No active business listings available near you.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 animate-in fade-in duration-500">
-            {popular.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+            {popular.map(biz => biz && <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
           </div>
         )}
       </section>
@@ -398,7 +398,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
       <div className="flex gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
         <button
           onClick={() => setActiveCategory('')}
-          className={`flex-shrink-0 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === '' ? 'bg-[#008751]' : 'bg-white border border-gray-200 text-gray-500'}`}
+          className={`flex-shrink-0 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === '' ? 'bg-[#008751] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-500'}`}
         >
           All
         </button>
@@ -406,7 +406,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
           <button
             key={cat.value}
             onClick={() => setActiveCategory(cat.value)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === cat.value ? 'bg-[#008751]' : 'bg-white border border-gray-200 text-gray-500'}`}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wide transition-all transform hover:scale-105 active:scale-95 ${activeCategory === cat.value ? 'bg-[#008751] text-white shadow-md' : 'bg-white border border-gray-200 text-gray-500'}`}
           >
             {cat.icon} {cat.name}
           </button>
@@ -424,7 +424,7 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5 animate-in fade-in duration-500">
-          {businesses.map(biz => <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
+          {businesses.map(biz => biz && <BusinessCard key={biz._id} biz={biz} onClick={onSelectBusiness} />)}
         </div>
       )}
     </div>
@@ -432,64 +432,76 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
 };
 
 // --- VIEW: BUSINESS DETAIL ---
-const DetailView = ({ business, onBack }) => (
-  <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 animate-in fade-in slide-in-from-right-4 duration-500">
-    <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-extrabold mb-6 hover:text-[#008751] text-xs md:text-sm transition-colors group">
-      <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Search
-    </button>
-
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
-      <div className="lg:col-span-7 space-y-6 md:space-y-8">
-        <div className="rounded-2xl md:rounded-3xl overflow-hidden h-64 md:h-96 shadow-xl border border-gray-100 group relative">
-          <img src={getShopPhoto(business)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={business.name} />
-        </div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-[#008751] font-black text-[10px] uppercase tracking-widest bg-emerald-50 w-max px-2 py-0.5 rounded">
-            <CheckCircle2 size={14} /> Verified Business
-          </div>
-          <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">{business.name}</h1>
-          <p className="text-sm md:text-base text-gray-500 leading-relaxed font-medium">{business.description}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
-          <div className="flex gap-3">
-            <MapPin className="text-[#008751] flex-shrink-0" size={20} />
-            <div>
-              <p className="font-bold text-gray-900 text-xs md:text-sm">Location</p>
-              <p className="text-gray-500 text-xs md:text-sm mt-0.5">{business.address}, {business.city}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Clock className="text-[#008751] flex-shrink-0" size={20} />
-            <div>
-              <p className="font-bold text-gray-900 text-xs md:text-sm">Operating Hours</p>
-              <p className="text-gray-500 text-xs md:text-sm mt-0.5">{getHours(business)}</p>
-            </div>
-          </div>
-        </div>
+// ✅ FIX: Added secure conditional defensive layout properties so React can never break into a white crash space if payload attributes are rendering asynchronously
+const DetailView = ({ business, onBack }) => {
+  if (!business) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-16 text-center text-gray-500 animate-in fade-in">
+        <Loader2 size={32} className="animate-spin text-[#008751] mx-auto mb-2" />
+        <p className="font-bold text-sm tracking-wide uppercase">Initializing Workspace Metadata</p>
       </div>
+    );
+  }
 
-      <div className="lg:col-span-5">
-        <div className="sticky top-24 bg-white p-6 md:p-8 border border-gray-100 rounded-2xl md:rounded-3xl shadow-2xl space-y-4 transform hover:scale-[1.01] transition-transform duration-300">
-          <h3 className="font-black text-gray-900 text-base md:text-lg tracking-tight">Contact Professional</h3>
-          <a
-            href={`tel:${business.phone}`}
-            className="w-full py-4 bg-[#008751] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.98] transition-all text-sm shadow-lg shadow-emerald-700/10"
-          >
-            <Phone size={18} /> Call {business.phone}
-          </a>
-          <a
-            href={`https://wa.me/${(business.whatsapp || business.phone || '').replace(/[^0-9]/g, '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-4 bg-[#25D366] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.98] transition-all text-sm shadow-lg shadow-green-600/10"
-          >
-            <MessageCircle size={18} /> Chat on WhatsApp
-          </a>
+  return (
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 animate-in fade-in slide-in-from-right-4 duration-500">
+      <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-extrabold mb-6 hover:text-[#008751] text-xs md:text-sm transition-colors group">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Search
+      </button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
+        <div className="lg:col-span-7 space-y-6 md:space-y-8">
+          <div className="rounded-2xl md:rounded-3xl overflow-hidden h-64 md:h-96 shadow-xl border border-gray-100 group relative">
+            <img src={getShopPhoto(business) || 'https://via.placeholder.com/600x400?text=No+Cover+Photo'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={business?.name || 'Storefront'} />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-[#008751] font-black text-[10px] uppercase tracking-widest bg-emerald-50 w-max px-2 py-0.5 rounded">
+              <CheckCircle2 size={14} /> Verified Business
+            </div>
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">{business?.name}</h1>
+            <p className="text-sm md:text-base text-gray-500 leading-relaxed font-medium">{business?.description}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+            <div className="flex gap-3">
+              <MapPin className="text-[#008751] flex-shrink-0" size={20} />
+              <div>
+                <p className="font-bold text-gray-900 text-xs md:text-sm">Location</p>
+                <p className="text-gray-500 text-xs md:text-sm mt-0.5">{business?.address}, {business?.city}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Clock className="text-[#008751] flex-shrink-0" size={20} />
+              <div>
+                <p className="font-bold text-gray-900 text-xs md:text-sm">Operating Hours</p>
+                <p className="text-gray-500 text-xs md:text-sm mt-0.5">{getHours(business)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-5">
+          <div className="sticky top-24 bg-white p-6 md:p-8 border border-gray-100 rounded-2xl md:rounded-3xl shadow-2xl space-y-4 transform hover:scale-[1.01] transition-transform duration-300">
+            <h3 className="font-black text-gray-900 text-base md:text-lg tracking-tight">Contact Professional</h3>
+            <a
+              href={`tel:${business?.phone}`}
+              className="w-full py-4 bg-[#008751] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:bg-emerald-800 active:scale-[0.98] transition-all text-sm shadow-lg shadow-emerald-700/10"
+            >
+              <Phone size={18} /> Call {business?.phone}
+            </a>
+            <a
+              href={`https://wa.me/${(business?.whatsapp || business?.phone || '').replace(/[^0-9]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-[#25D366] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.98] transition-all text-sm shadow-lg shadow-green-600/10"
+            >
+              <MessageCircle size={18} /> Chat on WhatsApp
+            </a>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- VIEW: SUBMIT BUSINESS ---
 const SubmitView = () => {
@@ -554,7 +566,6 @@ const SubmitView = () => {
     setAlert(null);
 
     try {
-      // 1. Core upload flow handling multipart multi-destination assets
       const uploadData = new FormData();
       uploadData.append('shopPhoto', shopPhoto);
       if (certificate) {
@@ -573,7 +584,6 @@ const SubmitView = () => {
 
       const mediaUrls = await uploadRes.json();
 
-      // 2. Register the business with real cloud URLs
       const registerRes = await fetch(`${API_BASE}/businesses/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -592,7 +602,6 @@ const SubmitView = () => {
 
       const savedBusinessId = registerData._id;
 
-      // 3. Initialize Paystack payment
       const email = form.phone + '@naijabizfind.com';
       const payRes = await fetch(`${API_BASE}/payments/initialize`, {
         method: 'POST',
@@ -605,7 +614,6 @@ const SubmitView = () => {
         throw new Error(payData.message || 'Payment initialization failed');
       }
 
-      // 4. Redirect to secure external checkouts
       window.location.href = payData.authorization_url;
 
     } catch (err) {
@@ -617,7 +625,6 @@ const SubmitView = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-10 animate-in zoom-in-95 duration-500">
       <div className="bg-white rounded-3xl border border-gray-100 p-6 md:p-12 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Register Your Business</h2>
@@ -632,7 +639,6 @@ const SubmitView = () => {
 
         {alert && <div className="mb-4"><Alert type={alert.type} message={alert.message} /></div>}
 
-        {/* STEP 1: Business Info */}
         {step === 1 && (
           <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
             <input
@@ -694,11 +700,9 @@ const SubmitView = () => {
           </div>
         )}
 
-        {/* STEP 2: Media Upload */}
         {step === 2 && (
           <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
-              {/* Shop Photo */}
               <input ref={shopPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleShopPhoto} />
               <div
                 onClick={() => shopPhotoInputRef.current.click()}
@@ -715,8 +719,7 @@ const SubmitView = () => {
                 )}
               </div>
 
-              {/* Certificate */}
-              <input ref={certInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleCertificate} />
+              <input ref={certInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleCertificate} />
               <div
                 onClick={() => certInputRef.current.click()}
                 className="border-2 border-dashed border-gray-200 bg-gray-50/30 rounded-2xl p-6 flex items-center gap-4 text-gray-400 hover:border-[#008751] hover:bg-white transition-all cursor-pointer group"
@@ -741,7 +744,6 @@ const SubmitView = () => {
           </div>
         )}
 
-        {/* STEP 3: Plan & Payment */}
         {step === 3 && (
           <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -766,7 +768,6 @@ const SubmitView = () => {
               </div>
             </div>
 
-            {/* Summary */}
             <div className="bg-gray-50 rounded-2xl p-5 text-sm space-y-2 border border-gray-100">
               <div className="flex justify-between font-bold text-gray-600">
                 <span>Business</span><span className="text-gray-900 truncate max-w-[180px]">{form.name}</span>
@@ -914,12 +915,9 @@ export default function App() {
   const [selectedBiz, setSelectedBiz] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [directoryOptions, setDirectoryOptions] = useState({});
-  
-  // Custom Dynamic State for Page Toggling Animations
   const [isTogglingPage, setIsTogglingPage] = useState(false);
 
   const navigate = (p, opts = {}) => {
-    // Access-Control Route Guard check for Normal Shoppers
     if (p === 'submit') {
       const activeRole = localStorage.getItem('userRole');
       if (activeRole !== 'owner') {
@@ -929,7 +927,6 @@ export default function App() {
       }
     }
 
-    // Initialize View Switch Animation Sequence Loop
     setIsTogglingPage(true);
     setTimeout(() => {
       setPage(p);
@@ -946,7 +943,6 @@ export default function App() {
     navigate('detail');
   };
 
-  // Secure Sign-Out Sequence
   const handleClearSession = () => {
     localStorage.clear();
     window.location.href = '/login';
@@ -1042,6 +1038,7 @@ export default function App() {
           <div className="flex gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase text-gray-300">
             <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Platform Active</span>
             <span className="hidden sm:inline">Lagos • Abuja • Port Harcourt</span>
+            <span className="hidden sm:inline">Built By J3Cube</span>
           </div>
         </div>
       </footer>
