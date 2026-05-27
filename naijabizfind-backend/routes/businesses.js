@@ -1,7 +1,7 @@
 import express from 'express';
-import bcrypt from 'bcrypt'; // ✅ Cryptographic library for secure password hashing
+import bcrypt from 'bcrypt'; 
 import Business from '../models/Business.js';
-import User from '../models/User.js';
+import User from '../models/User.js'; 
 
 const router = express.Router();
 
@@ -54,7 +54,7 @@ router.post('/register', async (req, res) => {
 
     const savedBusiness = await newBusiness.save();
 
-    // ✅ AUTOMATIC UPGRADE: Force update account capability configurations to 'owner' profile role inside DB
+    // AUTOMATIC UPGRADE: Force update account capability configurations to 'owner' profile role inside DB
     await User.findOneAndUpdate(
       { phone: phone.trim() }, 
       { role: 'owner' }
@@ -68,7 +68,7 @@ router.post('/register', async (req, res) => {
 });
 
 // @route   POST /api/businesses/owner-login
-// @desc    Business owner login or registration pipeline by credentials check (Returns array data list)
+// @desc    Business owner login or registration pipeline by credentials check (Returns flat parameter structure)
 // @access  Public
 router.post('/owner-login', async (req, res) => {
   try {
@@ -92,7 +92,7 @@ router.post('/owner-login', async (req, res) => {
     if (!existingUser) {
       const providedPassword = password || 'secure_default_pass';
       
-      // ✅ BCRYPT ENCRYPTION: Hash raw plain-text password using 10 salt rounds before saving to DB
+      // BCRYPT ENCRYPTION: Hash raw plain-text password using 10 salt rounds before saving to DB
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(providedPassword, salt);
 
@@ -100,14 +100,14 @@ router.post('/owner-login', async (req, res) => {
         username: username || 'User_' + Math.floor(1000 + Math.random() * 9000),
         email: email ? email.toLowerCase().trim() : `${cleanPhone}@naijabizfind.com`,
         phone: cleanPhone,
-        password: hashedPassword, // ✅ Stored safely as an encrypted hash string
+        password: hashedPassword, 
         role: role || 'user'
       });
       await existingUser.save();
     } else {
       // 3. If the user DOES exist (Login Flow from Login Page), securely verify the password credential signature matching algorithm
       if (password) {
-        // ✅ BCRYPT COMPARISON: Compare provided plain password string with securely hashed database counterpart
+        // BCRYPT COMPARISON: Compare provided plain password string with securely hashed database counterpart
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) {
           return res.status(401).json({ message: 'Authentication Failed: Invalid password signature match.' });
@@ -115,25 +115,29 @@ router.post('/owner-login', async (req, res) => {
       }
     }
 
-    // ✅ SECURITY BLOCK: Decline authentication requests instantly if user account is marked as blacklisted
+    // SECURITY BLOCK: Decline authentication requests instantly if user account is marked as blacklisted
     if (existingUser.role === 'blacklisted') {
       return res.status(403).json({ 
         message: 'Access Blocked: This profile has been deactivated by administrative command guidelines.' 
       });
     }
 
-    // 4. Search businesses database using find() to pull ALL matching multi-listing profiles owned by this phone account
+    // 4. Search businesses database to pull matching listings owned by this phone account
     const businessList = await Business.find({ phone: existingUser.phone });
 
-    // 5. Return complete response containing an embedded listings array to cleanly handle frontend loops
+    // 5. ✅ FIX: Return a highly predictable, backward-compatible flat object response mapping all attributes cleanly
     res.json({
-      user: {
-        username: existingUser.username,
-        email: existingUser.email,
-        phone: existingUser.phone,
-        role: existingUser.role
-      },
-      listings: businessList
+      _id: businessList.length > 0 ? businessList[0]._id : null,
+      name: businessList.length > 0 ? businessList[0].name : existingUser.username,
+      phone: existingUser.phone,
+      email: existingUser.email,
+      role: existingUser.role, 
+      description: businessList.length > 0 ? businessList[0].description : '',
+      plan: businessList.length > 0 ? businessList[0].plan : 'basic',
+      status: businessList.length > 0 ? businessList[0].status : 'approved',
+      isPaid: businessList.length > 0 ? businessList[0].isPaid : true,
+      shopPhoto: businessList.length > 0 ? (businessList[0].images?.shopPhoto || businessList[0].shopPhoto) : '',
+      allListings: businessList // Embedded fallback container list array for multiple storefront grids
     });
 
   } catch (error) {
