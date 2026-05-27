@@ -5,7 +5,6 @@ import {
   Settings, TrendingUp, Users, Star, Menu, X, Loader2, Upload, AlertCircle, CheckCircle2, Edit3, Crown, Check, Activity
 } from 'lucide-react';
 
-// ✅ Live production API endpoint configuration
 const API_BASE = 'https://naijabizfind.onrender.com/api';
 
 // --- Premium 3D Tilt Card Component (Untouched UI) ---
@@ -75,34 +74,28 @@ const TiltCard = ({ title, value, icon: Icon, delay }) => {
   );
 };
 
-// --- Main Dashboard ---
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Navigation & Tab Switcher Loader States
-  const [activeTab, setActiveTab] = useState('overview'); // overview, listings, add, settings
+  const [activeTab, setActiveTab] = useState('overview'); 
   const [isTogglingTab, setIsTogglingTab] = useState(false);
   
-  // Data State
   const [myListings, setMyListings] = useState([]);
   const [isFetchingListings, setIsFetchingListings] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '', category: 'fashion', city: '', address: '', description: '',
     email: '', phone: '', whatsapp: '', openTime: '09:00', closeTime: '18:00', plan: 'basic'
   });
   
-  // File References
   const [shopPhotoFile, setShopPhotoFile] = useState(null);
   const [certificateFile, setCertificateFile] = useState(null);
 
-  // Initial Load Animation & Data Fetching
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -130,11 +123,13 @@ export default function OwnerDashboard() {
       const data = await res.json();
       
       if (res.ok && data) {
-        // ✅ FIX: Extract data dynamically using structural object responses
-        if (data.listings) {
+        // ✅ FIX: Extract items smoothly from the updated flat object properties mapping
+        if (data.allListings) {
+          setMyListings(data.allListings);
+        } else if (data.listings) {
           setMyListings(data.listings);
         } else {
-          setMyListings(Array.isArray(data) ? data : data._id ? [data] : []); 
+          setMyListings(Array.isArray(data) ? data : data._id ? [data] : []);
         }
       }
     } catch (err) {
@@ -178,7 +173,6 @@ export default function OwnerDashboard() {
       let shopPhotoUrl = null;
       let certificateUrl = null;
 
-      // ✅ FIX: Pack actual tracked reactive states to avoid sending empty parameters
       if (shopPhotoFile || certificateFile) {
         const uploadData = new FormData();
         if (shopPhotoFile) uploadData.append('shopPhoto', shopPhotoFile);
@@ -555,13 +549,11 @@ export default function OwnerDashboard() {
                   <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
                     <Upload className="mx-auto text-gray-400 mb-2" />
                     <label className="block text-sm font-bold text-gray-700 mb-1">Upload Shop Photo {editingId ? '(Optional)' : '(Required)'}</label>
-                    {/* ✅ FIX: Properly tracking file selections using state hook setters directly */}
                     <input type="file" accept="image/*" onChange={(e) => setShopPhotoFile(e.target.files[0])} required={!editingId} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-green-50 file:text-green-700" />
                   </div>
                   <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center">
                     <CheckCircle2 className="mx-auto text-gray-400 mb-2" />
                     <label className="block text-sm font-bold text-gray-700 mb-1">Upload Certificate (Optional)</label>
-                    {/* ✅ FIX: Properly tracking file selections using state hook setters directly */}
                     <input type="file" accept="image/*,.pdf" onChange={(e) => setCertificateFile(e.target.files[0])} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-blue-50 file:text-blue-700" />
                   </div>
                 </div>
