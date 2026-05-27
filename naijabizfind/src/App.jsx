@@ -192,19 +192,19 @@ const HomeView = ({ onNavigate, onSelectBusiness }) => {
         const res = await fetch(`${API_BASE}/businesses`);
         if (res.ok) {
           const data = await res.json();
-          setBusinesses(data);
+          setBusinesses(Array.isArray(data) ? data : []);
         }
       } catch (err) {
         console.error('Failed fetching data streaming:', err);
-      } final: {
+      } finally {
         setLoading(false);
       }
     };
     fetchFeatured();
   }, []);
 
-  const featured = businesses.filter(b => b && isFeatured(b)).slice(0, 5);
-  const popular = businesses.filter(b => b && !isFeatured(b)).slice(0, 10);
+  const featured = businesses.filter(b => b && b._id && b.isPaid && b.status === 'approved' && isFeatured(b)).slice(0, 5);
+  const popular = businesses.filter(b => b && b._id && b.isPaid && b.status === 'approved' && !isFeatured(b)).slice(0, 10);
 
   // Initialize Scroll Reveal Elements
   const catRef = useScrollReveal();
@@ -356,10 +356,10 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
       const res = await fetch(`${API_BASE}/businesses?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
-      setBusinesses(data);
+      setBusinesses(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('API integration stream halt:', err);
-    } finally {
+    } final: {
       setLoading(false);
     }
   };
@@ -432,13 +432,14 @@ const DirectoryView = ({ onSelectBusiness, initialCategory, initialCity }) => {
 };
 
 // --- VIEW: BUSINESS DETAIL ---
-// ✅ FIX: Added secure conditional defensive layout properties so React can never break into a white crash space if payload attributes are rendering asynchronously
+// ✅ FIX: Fixed the conditional block checks to verify business profile mapping contexts, completely preventing continuous loader spins
 const DetailView = ({ business, onBack }) => {
-  if (!business) {
+  if (!business || !business.name) {
     return (
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-16 text-center text-gray-500 animate-in fade-in">
-        <Loader2 size={32} className="animate-spin text-[#008751] mx-auto mb-2" />
-        <p className="font-bold text-sm tracking-wide uppercase">Initializing Workspace Metadata</p>
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-24 text-center text-gray-500 animate-in fade-in">
+        <Loader2 size={32} className="animate-spin text-[#008751] mx-auto mb-3" />
+        <p className="font-bold text-sm tracking-wide uppercase">Assembling Storefront Profile Data Layers</p>
+        <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs uppercase transition-colors">Return to active search</button>
       </div>
     );
   }
@@ -930,7 +931,7 @@ export default function App() {
     setIsTogglingPage(true);
     setTimeout(() => {
       setPage(p);
-      setSelectedBiz(null);
+      if (p !== 'detail') setSelectedBiz(null); // Clear context selection when moving away to protect lifecycle loops
       setIsMenuOpen(false);
       setDirectoryOptions(opts);
       window.scrollTo(0, 0);
@@ -940,7 +941,13 @@ export default function App() {
 
   const handleSelectBusiness = (biz) => {
     setSelectedBiz(biz);
-    navigate('detail');
+    // ✅ FIX: Swapped synchronous tab execution into a safely enclosed lifecycle delay module
+    setIsTogglingPage(true);
+    setTimeout(() => {
+      setPage('detail');
+      window.scrollTo(0, 0);
+      setIsTogglingPage(false);
+    }, 200);
   };
 
   const handleClearSession = () => {
